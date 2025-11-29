@@ -18,7 +18,7 @@ void App::startup() {
     _imu.set_gyr_bias(0.0f);
     _imu.set_acc_noise_std(Eigen::Vector2f(0.01f, 0.01f));
     _imu.set_gyr_noise_std(0.001f);
-    load_world_preset(WorldPreset::ASquaresHouse); // Load default preset
+    load_world_preset(WorldPreset::ASquaresHouse);
 }
 
 void App::shutdown() {}
@@ -347,7 +347,8 @@ void App::simulate() {
     _gt_cam.clear();
     _imu_measurements.clear();
     _cam_measurements.clear();
-    _est_pos.clear();
+    _est_poses.clear();
+    _est_vel.clear();
 
     if (!_gt_trajectory.is_valid())
         return;
@@ -363,39 +364,15 @@ void App::simulate() {
         float t = static_cast<float>(i);
         Eigen::Vector3f pose = _gt_trajectory.pose(t);
         _gt_poses.push_back(pose);
-    }
 
-    // Compute velocities from finite differences
-    for (size_t i = 0; i < num_poses; i++) {
-        Eigen::Vector2f vel;
-        float omega;
-        if (i == 0) {
-            // Forward difference
-            vel = (_gt_poses[1].head<2>() - _gt_poses[0].head<2>()) / _dt;
-            omega = (_gt_poses[1].z() - _gt_poses[0].z()) / _dt;
-        } else if (i == num_poses - 1) {
-            // Backward difference
-            vel = (_gt_poses[i].head<2>() - _gt_poses[i - 1].head<2>()) / _dt;
-            omega = (_gt_poses[i].z() - _gt_poses[i - 1].z()) / _dt;
-        } else {
-            // Central difference
-            vel = (_gt_poses[i + 1].head<2>() - _gt_poses[i - 1].head<2>()) / (2.0f * _dt);
-            omega = (_gt_poses[i + 1].z() - _gt_poses[i - 1].z()) / (2.0f * _dt);
-        }
+        // Use trajectory methods for velocity/acceleration
+        // Trajectory derivatives are with respect to the parameter t (pose index)
+        Eigen::Vector2f vel = _gt_trajectory.velocity(t);
+        float omega = _gt_trajectory.angular_velocity(t);
+        Eigen::Vector2f acc = _gt_trajectory.acceleration(t);
+
         _gt_vel.push_back(vel);
         _gt_omega.push_back(omega);
-    }
-
-    // Compute accelerations from finite differences of velocity
-    for (size_t i = 0; i < num_poses; i++) {
-        Eigen::Vector2f acc;
-        if (i == 0) {
-            acc = (_gt_vel[1] - _gt_vel[0]) / _dt;
-        } else if (i == num_poses - 1) {
-            acc = (_gt_vel[i] - _gt_vel[i - 1]) / _dt;
-        } else {
-            acc = (_gt_vel[i + 1] - _gt_vel[i - 1]) / (2.0f * _dt);
-        }
         _gt_acc.push_back(acc);
     }
 
@@ -634,15 +611,55 @@ std::vector<Eigen::Vector2f> App::filter_visible_landmarks(const Eigen::Vector2f
 }
 
 void App::estimate() {
-    _est_pos.clear();
-    if (!_gt_trajectory.is_valid())
+    _est_poses.clear();
+    _est_vel.clear();
+
+    if (_imu_measurements.empty() || _gt_poses.empty())
         return;
 
-    size_t num_poses = _gt_trajectory.num_poses();
-    _est_pos.resize(num_poses);
-    for (size_t i = 0; i < num_poses; i++) {
-        Eigen::Vector2f pos = _gt_trajectory.position(static_cast<float>(i));
-        _est_pos[i] = pos + Eigen::Vector2f(0.0f, 10.0f);
+    size_t num_poses = _imu_measurements.size();
+    _est_poses.reserve(num_poses);
+    _est_vel.reserve(num_poses);
+
+    // Initialize with ground truth initial state
+    _est_poses.push_back(_gt_poses[0]);
+    _est_vel.push_back(_gt_vel[0]);
+
+    // Integrate IMU measurements (dt=1 since trajectory is parameterized by index)
+    const float dt = 1.0f;
+
+    for (size_t i = 1; i < num_poses; i++) {
+        const IMUMeasurement& imu = _imu_measurements[i - 1];
+        Eigen::Vector3f prev_pose = _est_poses[i - 1];
+        Eigen::Vector2f prev_vel = _est_vel[i - 1];
+        float theta = prev_pose.z();
+
+        // Remove bias from IMU measurements (we know the true bias for now)
+        Eigen::Vector2f acc_body = imu.acc - _imu.acc_bias();
+        float gyr = imu.gyr - _imu.gyr_bias();
+
+        // Rotate acceleration from body frame to world frame
+        float cos_t = std::cos(theta);
+        float sin_t = std::sin(theta);
+        Eigen::Matrix2f R_bw; // Body to world rotation
+        R_bw << cos_t, -sin_t, sin_t, cos_t;
+        Eigen::Vector2f acc_world = R_bw * acc_body;
+
+        // Add gravity back (accelerometer measures specific force = acc - gravity)
+        // So world_acc = specific_force + gravity
+        acc_world += _gravity;
+
+        // Integrate orientation: theta_new = theta + omega * dt
+        float new_theta = theta + gyr * dt;
+
+        // Integrate velocity: v_new = v + a * dt
+        Eigen::Vector2f new_vel = prev_vel + acc_world * dt;
+
+        // Integrate position: p_new = p + v * dt + 0.5 * a * dt^2
+        Eigen::Vector2f new_pos = prev_pose.head<2>() + prev_vel * dt + 0.5f * acc_world * dt * dt;
+
+        _est_poses.push_back(Eigen::Vector3f(new_pos.x(), new_pos.y(), new_theta));
+        _est_vel.push_back(new_vel);
     }
 }
 
@@ -1269,11 +1286,110 @@ void App::render_measurements() {
 
 void App::render_perception_output() {
     if (ImGui::CollapsingHeader("Perception Output", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if (ImPlot::BeginPlot("Position")) {
+        if (_est_poses.empty() || _gt_poses.empty()) {
+            ImGui::Text("No estimation data available.");
+            return;
+        }
+
+        size_t num_poses = _est_poses.size();
+
+        // Prepare time index axis
+        std::vector<float> time_axis(num_poses);
+        for (size_t i = 0; i < num_poses; i++) {
+            time_axis[i] = static_cast<float>(i);
+        }
+
+        // 2D trajectory plot
+        if (ImPlot::BeginPlot("Trajectory", ImVec2(-1, 300), ImPlotFlags_Equal)) {
             if (_gt_trajectory.is_valid()) {
                 plot_2d_trajectory("Ground-truth", _gt_trajectory, Color::Green());
             }
-            plot_2d_path("Estimated", _est_pos, Color::Red());
+            std::vector<Eigen::Vector2f> est_positions;
+            est_positions.reserve(num_poses);
+            for (const auto& pose : _est_poses) {
+                est_positions.push_back(pose.head<2>());
+            }
+            plot_2d_path("Estimated", est_positions, Color::Red());
+            ImPlot::EndPlot();
+        }
+
+        // Position X and Y plots
+        if (ImPlot::BeginPlot("Position", ImVec2(-1, 200))) {
+            ImPlot::SetupAxes("Time Index", "Position (m)");
+
+            std::vector<float> gt_x(num_poses), gt_y(num_poses);
+            std::vector<float> est_x(num_poses), est_y(num_poses);
+            for (size_t i = 0; i < num_poses; i++) {
+                gt_x[i] = _gt_poses[i].x();
+                gt_y[i] = _gt_poses[i].y();
+                est_x[i] = _est_poses[i].x();
+                est_y[i] = _est_poses[i].y();
+            }
+
+            // Ground truth (faded)
+            Color gt_color_x = Color(0.25f * 1.0f + 0.75f, 0.25f * 0.0f + 0.75f, 0.25f * 0.0f + 0.75f);
+            Color gt_color_y = Color(0.25f * 0.0f + 0.75f, 0.25f * 0.0f + 0.75f, 0.25f * 1.0f + 0.75f);
+            ImPlot::SetNextLineStyle(ImVec4(gt_color_x), 1.0f);
+            ImPlot::PlotLine("GT X", time_axis.data(), gt_x.data(), static_cast<int>(num_poses));
+            ImPlot::SetNextLineStyle(ImVec4(gt_color_y), 1.0f);
+            ImPlot::PlotLine("GT Y", time_axis.data(), gt_y.data(), static_cast<int>(num_poses));
+
+            // Estimated
+            ImPlot::SetNextLineStyle(ImVec4(Color::Red()), 2.0f);
+            ImPlot::PlotLine("Est X", time_axis.data(), est_x.data(), static_cast<int>(num_poses));
+            ImPlot::SetNextLineStyle(ImVec4(Color::Blue()), 2.0f);
+            ImPlot::PlotLine("Est Y", time_axis.data(), est_y.data(), static_cast<int>(num_poses));
+
+            ImPlot::EndPlot();
+        }
+
+        // Orientation plot
+        if (ImPlot::BeginPlot("Orientation", ImVec2(-1, 200))) {
+            ImPlot::SetupAxes("Time Index", "Orientation (rad)");
+
+            std::vector<float> gt_theta(num_poses), est_theta(num_poses);
+            for (size_t i = 0; i < num_poses; i++) {
+                gt_theta[i] = _gt_poses[i].z();
+                est_theta[i] = _est_poses[i].z();
+            }
+
+            Color gt_color = Color(0.25f * 0.0f + 0.75f, 0.25f * 0.5f + 0.75f, 0.25f * 0.0f + 0.75f);
+            ImPlot::SetNextLineStyle(ImVec4(gt_color), 1.0f);
+            ImPlot::PlotLine("GT Theta", time_axis.data(), gt_theta.data(), static_cast<int>(num_poses));
+
+            ImPlot::SetNextLineStyle(ImVec4(Color::Green()), 2.0f);
+            ImPlot::PlotLine("Est Theta", time_axis.data(), est_theta.data(), static_cast<int>(num_poses));
+
+            ImPlot::EndPlot();
+        }
+
+        // Velocity plot
+        if (ImPlot::BeginPlot("Velocity", ImVec2(-1, 200))) {
+            ImPlot::SetupAxes("Time Index", "Velocity (m/idx)");
+
+            std::vector<float> gt_vx(num_poses), gt_vy(num_poses);
+            std::vector<float> est_vx(num_poses), est_vy(num_poses);
+            for (size_t i = 0; i < num_poses; i++) {
+                gt_vx[i] = _gt_vel[i].x();
+                gt_vy[i] = _gt_vel[i].y();
+                est_vx[i] = _est_vel[i].x();
+                est_vy[i] = _est_vel[i].y();
+            }
+
+            // Ground truth (faded)
+            Color gt_color_vx = Color(0.25f * 1.0f + 0.75f, 0.25f * 0.0f + 0.75f, 0.25f * 0.0f + 0.75f);
+            Color gt_color_vy = Color(0.25f * 0.0f + 0.75f, 0.25f * 0.0f + 0.75f, 0.25f * 1.0f + 0.75f);
+            ImPlot::SetNextLineStyle(ImVec4(gt_color_vx), 1.0f);
+            ImPlot::PlotLine("GT Vx", time_axis.data(), gt_vx.data(), static_cast<int>(num_poses));
+            ImPlot::SetNextLineStyle(ImVec4(gt_color_vy), 1.0f);
+            ImPlot::PlotLine("GT Vy", time_axis.data(), gt_vy.data(), static_cast<int>(num_poses));
+
+            // Estimated
+            ImPlot::SetNextLineStyle(ImVec4(Color::Red()), 2.0f);
+            ImPlot::PlotLine("Est Vx", time_axis.data(), est_vx.data(), static_cast<int>(num_poses));
+            ImPlot::SetNextLineStyle(ImVec4(Color::Blue()), 2.0f);
+            ImPlot::PlotLine("Est Vy", time_axis.data(), est_vy.data(), static_cast<int>(num_poses));
+
             ImPlot::EndPlot();
         }
     }

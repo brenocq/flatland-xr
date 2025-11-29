@@ -75,8 +75,8 @@ class App {
     IMU2D _imu;
 
     //----- Simulation parameters -----//
-    float _dt = 1.0f;                                         ///< Time step between poses (seconds)
-    Eigen::Vector2f _gravity = Eigen::Vector2f(0.0f, -9.81f); ///< World gravity vector (m/s²)
+    float _dt = 1.0f;                                     ///< Time step between poses (in index units)
+    Eigen::Vector2f _gravity = Eigen::Vector2f::Zero();   ///< World gravity vector (zero for 2D planar)
 
     //----- World & ground-truth states -----//
     WorldPreset _current_preset = WorldPreset::Custom;
@@ -111,5 +111,6 @@ class App {
     std::vector<std::vector<LandmarkObservation>> _cam_measurements;
 
     //----- Estimated data -----//
-    std::vector<Eigen::Vector2f> _est_pos;
+    std::vector<Eigen::Vector3f> _est_poses; ///< Estimated poses (x, y, theta)
+    std::vector<Eigen::Vector2f> _est_vel;   ///< Estimated velocities (vx, vy)
 };
