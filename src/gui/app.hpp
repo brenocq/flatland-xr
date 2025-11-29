@@ -19,4 +19,6 @@ public:
 private:
     /// Render the app's ImGui window
     void render();
+
+    void render_config();
 };

@@ -30,6 +30,8 @@ void App::update() {
 void App::render() {
    ImGui::Text("Some cool MSCKF is about to show up here");
 
+   render_config();
+
    const size_t NUM_STEPS = 100;
    std::vector<Eigen::Vector2d> est_pos(NUM_STEPS);
    std::vector<Eigen::Vector2d> gt_pos(NUM_STEPS);
@@ -41,9 +43,22 @@ void App::render() {
        est_pos[i] = gt_pos[i] + Eigen::Vector2d(0.0, 10.0);
    }
 
+
    if (ImPlot::BeginPlot("Position")) {
        plot_2d_path("Ground-truth", gt_pos, Color::Green());
        plot_2d_path("Estimated", est_pos, Color::Red());
        ImPlot::EndPlot();
    }
+}
+
+void App::render_config() {
+    if(ImGui::CollapsingHeader("Config", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Indent();
+        ImGui::Text("Num of steps");
+        ImGui::Text("Num of landmarks");
+        ImGui::Text("IMU acc noise");
+        ImGui::Text("IMU gyr noise");
+        ImGui::Text("Camera noise");
+        ImGui::Unindent();
+    }
 }
