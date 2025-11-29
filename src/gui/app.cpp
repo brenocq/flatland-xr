@@ -305,14 +305,33 @@ void App::render_world_editor() {
             } else {
                 // Show tooltip for closest point and camera preview for poses
                 if (closest_landmark >= 0) {
-                    ImGui::SetTooltip("Landmark %d\nPos: (%.2f, %.2f)", closest_landmark, _landmarks[closest_landmark].x(),
-                                      _landmarks[closest_landmark].y());
+                    // Count observations for this landmark
+                    int obs_count = 0;
+                    if (_gt_trajectory.is_valid()) {
+                        int num_poses = static_cast<int>(_gt_trajectory.max_t()) + 1;
+                        for (int t = 0; t < num_poses; t++) {
+                            Eigen::Vector3f pose = _gt_trajectory.pose(static_cast<float>(t));
+                            auto u = _camera.project(pose, _landmarks[closest_landmark]);
+                            if (u.has_value()) {
+                                obs_count++;
+                                Eigen::Vector2f pos(pose.x(), pose.y());
+                                // Only show observation for the hovered landmark
+                                std::vector<LandmarkObservation> single_obs = {{u.value(), static_cast<size_t>(closest_landmark)}};
+                                plot_2d_camera_frustum("##LandmarkHoverCamera", pos, pose.z(), _camera.fov(), 1.0f, Color::Blue());
+                                plot_2d_camera_rays("##LandmarkHoverRays", pos, _landmarks, single_obs, 1.0f);
+                                plot_2d_camera_observations("##LandmarkHoverObs", pos, pose.z(), _camera, single_obs);
+                            }
+                        }
+                    }
+                    ImGui::SetTooltip("Landmark %d\nPos: (%.2f, %.2f)\nObservations: %d", closest_landmark, _landmarks[closest_landmark].x(),
+                                      _landmarks[closest_landmark].y(), obs_count);
                 } else if (closest_gt >= 0 && _gt_trajectory.is_valid()) {
                     Eigen::Vector3f pose = _gt_trajectory.pose(static_cast<float>(closest_gt));
-                    ImGui::SetTooltip("GT Pose %d\nPos: (%.2f, %.2f)\nOrientation: %.2f°", closest_gt, pose.x(), pose.y(), pose.z() * 180.0f / M_PI);
                     // Draw camera frustum with projected landmarks
                     Eigen::Vector2f pos(pose.x(), pose.y());
                     auto observations = _camera.project_landmarks(pose, _landmarks);
+                    ImGui::SetTooltip("GT Pose %d\nPos: (%.2f, %.2f)\nOrientation: %.2f°\nObservations: %zu", closest_gt, pose.x(), pose.y(),
+                                      pose.z() * 180.0f / M_PI, observations.size());
                     plot_2d_camera_frustum("##HoverCamera", pos, pose.z(), _camera.fov(), 1.0f, Color::Blue());
                     plot_2d_camera_rays("##HoverRays", pos, _landmarks, observations, 1.0f);
                     plot_2d_camera_observations("##HoverObs", pos, pose.z(), _camera, observations);
