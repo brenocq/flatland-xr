@@ -3,24 +3,27 @@
 
 // MSCKF Playground
 
-#include "imgui.h"
-#include "implot.h"
 #include <gui/window.hpp>
+#include <gui/app.hpp>
 
 int main() {
     Window window("MSCKF Playground", 1200, 800);
+    App app;
 
+    // Setup
     if (!window.create())
         return -1;
+    app.startup();
 
+    // Main loop
     while (!window.should_close()) {
         window.begin_frame();
-
-        ImGui::ShowDemoWindow();
-        ImPlot::ShowDemoWindow();
-
+        app.update();
         window.end_frame();
     }
+
+    // Cleanup
+    app.shutdown();
     window.destroy();
 
     return 0;

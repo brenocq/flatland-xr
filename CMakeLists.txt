@@ -61,6 +61,7 @@ set(EXE_SOURCE
     ${exe_SOURCE_DIR}/main.cpp
 
     # GUI
+    ${exe_SOURCE_DIR}/gui/app.cpp
     ${exe_SOURCE_DIR}/gui/window.cpp
 )
 add_executable(msckf_playground ${EXE_SOURCE})

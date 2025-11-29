@@ -55,6 +55,9 @@ bool Window::create() {
     ImGui::CreateContext();
     ImPlot::CreateContext();
 
+    // Setup ImGui
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
     // Setup style
     ImGui::StyleColorsDark();
 
