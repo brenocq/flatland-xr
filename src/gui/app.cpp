@@ -10,7 +10,7 @@
 
 App::App() {}
 
-void App::startup() {}
+void App::startup() { _camera.set_intrinsics(100, 45.0f * M_PI / 180.0f); }
 
 void App::shutdown() {}
 
@@ -143,8 +143,16 @@ bool App::render_config() {
         ImGui::Spacing();
 
         ImGui::Text("Camera Config");
-        updated |= ImGui::DragInt("Width (px)", &_cam_width);
-        updated |= ImGui::DragFloat("FOV (deg)", &_cam_fov);
+        int cam_width = _camera.width();
+        float cam_fov_deg = _camera.fov() * 180.0f / M_PI;
+        if (ImGui::DragInt("Width (px)", &cam_width)) {
+            _camera.set_width(cam_width);
+            updated = true;
+        }
+        if (ImGui::DragFloat("FOV (deg)", &cam_fov_deg)) {
+            _camera.set_fov(cam_fov_deg * M_PI / 180.0f);
+            updated = true;
+        }
         updated |= ImGui::DragFloat("Camera noise std", &_cam_noise_std);
         ImGui::Spacing();
 
@@ -290,9 +298,10 @@ void App::render_world_editor() {
                 float last_t = _gt_trajectory.max_t();
                 Eigen::Vector3f pose = _gt_trajectory.pose(last_t);
                 Eigen::Vector2f pos(pose.x(), pose.y());
-                float orientation = pose.z();
-                float fov_rad = _cam_fov * M_PI / 180.0f;
-                plot_2d_camera("##DrawingCamera", pos, orientation, fov_rad, 1.0f, Color::Red());
+                auto observations = _camera.project_landmarks(pose, _landmarks);
+                plot_2d_camera_frustum("##DrawingCamera", pos, pose.z(), _camera.fov(), 1.0f, Color::Red());
+                plot_2d_camera_rays("##DrawingRays", pos, _landmarks, observations, Color::Yellow(), 1.0f);
+                plot_2d_camera_observations("##DrawingObs", pos, pose.z(), _camera, observations, Color::Yellow());
             } else {
                 // Show tooltip for closest point and camera preview for poses
                 if (closest_landmark >= 0) {
@@ -301,11 +310,12 @@ void App::render_world_editor() {
                 } else if (closest_gt >= 0 && _gt_trajectory.is_valid()) {
                     Eigen::Vector3f pose = _gt_trajectory.pose(static_cast<float>(closest_gt));
                     ImGui::SetTooltip("GT Pose %d\nPos: (%.2f, %.2f)\nOrientation: %.2f°", closest_gt, pose.x(), pose.y(), pose.z() * 180.0f / M_PI);
-                    // Draw camera frustum at hovered pose
+                    // Draw camera frustum with projected landmarks
                     Eigen::Vector2f pos(pose.x(), pose.y());
-                    float orientation = pose.z();
-                    float fov_rad = _cam_fov * M_PI / 180.0f;
-                    plot_2d_camera("##HoverCamera", pos, orientation, fov_rad, 1.0f, Color::Red());
+                    auto observations = _camera.project_landmarks(pose, _landmarks);
+                    plot_2d_camera_frustum("##HoverCamera", pos, pose.z(), _camera.fov(), 1.0f, Color::Red());
+                    plot_2d_camera_rays("##HoverRays", pos, _landmarks, observations, Color::Yellow(), 1.0f);
+                    plot_2d_camera_observations("##HoverObs", pos, pose.z(), _camera, observations, Color::Yellow());
                 }
             }
 

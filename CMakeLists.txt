@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 project(lineland-xr LANGUAGES CXX C)
 
 # Set the C++ standard
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(FetchContent)
 
@@ -74,6 +74,7 @@ target_link_libraries(implot PUBLIC imgui)
 set(exe_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(EXE_SOURCE
     ${exe_SOURCE_DIR}/main.cpp
+    ${exe_SOURCE_DIR}/camera2d.cpp
     ${exe_SOURCE_DIR}/trajectory2d.cpp
     # GUI
     ${exe_SOURCE_DIR}/gui/app.cpp

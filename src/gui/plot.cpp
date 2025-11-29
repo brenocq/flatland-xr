@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include "implot.h"
+#include <camera2d.hpp>
 #include <cmath>
 #include <gui/plot.hpp>
 #include <trajectory2d.hpp>
@@ -26,8 +27,8 @@ void plot_2d_scatter(const std::string& label, const std::vector<Eigen::Vector2f
     ImPlot::PlotScatter(label.c_str(), &positions[0].x(), &positions[0].y(), positions.size(), ImPlotScatterFlags_None, 0, sizeof(Eigen::Vector2f));
 }
 
-void plot_2d_camera(const std::string& label, const Eigen::Vector2f& position, float orientation, float fov, float focal_length, const Color& color,
-                    float weight) {
+void plot_2d_camera_frustum(const std::string& label, const Eigen::Vector2f& position, float orientation, float fov, float focal_length,
+                            const Color& color, float weight) {
     // Calculate the image plane corners
     float half_fov = fov / 2.0f;
     float half_width = focal_length * std::tan(half_fov);
@@ -109,5 +110,57 @@ void plot_2d_trajectory(const std::string& label, const Trajectory2D& trajectory
         pose_positions.push_back(trajectory.position(static_cast<float>(i)));
     }
 
-    plot_2d_scatter("##" + label + "_poses", pose_positions, color, scatter_size);
+    plot_2d_scatter(label, pose_positions, color, scatter_size);
+}
+
+void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f& position, float orientation, const Camera2D& camera,
+                                 const std::vector<LandmarkObservation>& observations, const Color& color) {
+    if (observations.empty())
+        return;
+
+    // Use 1 unit distance for visualization
+    constexpr float vis_distance = 1.0f;
+    float fov = camera.fov();
+    float half_fov = fov / 2.0f;
+    float half_width = vis_distance * std::tan(half_fov);
+
+    // Direction vectors
+    Eigen::Vector2f forward(std::cos(orientation), std::sin(orientation));
+    Eigen::Vector2f right(std::cos(orientation - M_PI / 2.0f), std::sin(orientation - M_PI / 2.0f));
+
+    // Image plane center and corners (1 unit away)
+    Eigen::Vector2f plane_center = position + forward * vis_distance;
+    Eigen::Vector2f left_corner = plane_center - right * half_width;
+    Eigen::Vector2f right_corner = plane_center + right * half_width;
+
+    // Draw observations as points on the image plane
+    std::vector<Eigen::Vector2f> obs_points;
+    obs_points.reserve(observations.size());
+
+    for (const auto& obs : observations) {
+        // Convert pixel u to position on image plane
+        // u = 0 -> left_corner, u = width -> right_corner
+        float t = obs.u / static_cast<float>(camera.width());
+        Eigen::Vector2f point = left_corner + (right_corner - left_corner) * t;
+        obs_points.push_back(point);
+    }
+
+    ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 2.0f, ImVec4(color), IMPLOT_AUTO, ImVec4(color));
+    ImPlot::PlotScatter(label.c_str(), &obs_points[0].x(), &obs_points[0].y(), obs_points.size(), ImPlotScatterFlags_None, 0,
+                        sizeof(Eigen::Vector2f));
+}
+
+void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& position, const std::vector<Eigen::Vector2f>& landmarks,
+                         const std::vector<LandmarkObservation>& observations, const Color& color, float weight) {
+    if (observations.empty())
+        return;
+
+    for (size_t i = 0; i < observations.size(); i++) {
+        const auto& obs = observations[i];
+        const Eigen::Vector2f& landmark = landmarks[obs.landmark_id];
+
+        std::vector<Eigen::Vector2f> ray = {position, landmark};
+        ImPlot::SetNextLineStyle(ImVec4(color), weight);
+        ImPlot::PlotLine(label.c_str(), &ray[0].x(), &ray[0].y(), ray.size(), ImPlotLineFlags_None, 0, sizeof(Eigen::Vector2f));
+    }
 }

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <camera2d.hpp>
 #include <trajectory2d.hpp>
 #include <vector>
 
@@ -55,9 +56,8 @@ class App {
     int _num_landmarks = 10;
 
     // Camera parameters
-    int _cam_width = 100;   ///< Camera width in pixels
-    float _cam_fov = 45.0f; ///< Camera FOV in degrees
     float _cam_noise_std = 1.0f;
+    Camera2D _camera; ///< Camera model for projection
 
     // IMU parameters
     float _acc_noise_std = 0.01f;
