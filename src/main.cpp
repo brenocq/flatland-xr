@@ -3,8 +3,8 @@
 
 // MSCKF Playground
 
-#include <gui/window.hpp>
 #include <gui/app.hpp>
+#include <gui/window.hpp>
 
 int main() {
     Window window("MSCKF Playground", 1200, 800);

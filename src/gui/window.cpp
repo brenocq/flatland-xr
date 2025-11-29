@@ -10,7 +10,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-Window::Window(const std::string& name, size_t width, size_t height): _name(name), _width(width), _height(height), _window(nullptr) {}
+Window::Window(const std::string& name, size_t width, size_t height) : _name(name), _width(width), _height(height), _window(nullptr) {}
 
 // Callback to handle GLFW errors
 void glfw_error_callback(int error, const char* description) { std::cerr << "GLFW Error " << error << ": " << description << std::endl; }
@@ -69,7 +69,7 @@ bool Window::create() {
 }
 
 void Window::destroy() {
-    if(!_window)
+    if (!_window)
         return;
 
     ImGui_ImplOpenGL3_Shutdown();
@@ -80,7 +80,7 @@ void Window::destroy() {
     glfwTerminate();
 }
 
-bool Window::should_close() { return glfwWindowShouldClose(_window);}
+bool Window::should_close() { return glfwWindowShouldClose(_window); }
 
 void Window::begin_frame() {
     // Poll mouse/keyboard events

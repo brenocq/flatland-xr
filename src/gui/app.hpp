@@ -7,7 +7,7 @@
 #include <vector>
 
 class App {
-public:
+  public:
     App();
 
     /// Startup app internal data structures
@@ -19,7 +19,7 @@ public:
     /// Update app logic and render frame
     void update();
 
-private:
+  private:
     /// Render the app's ImGui window
     void render();
 
@@ -38,12 +38,14 @@ private:
     int _num_steps = 100;
     int _num_landmarks = 10;
 
-    int _cam_width = 100; ///< Camera width in pixels
+    // Camera parameters
+    int _cam_width = 100;   ///< Camera width in pixels
     float _cam_fov = 45.0f; ///< Camera FOV in degrees
+    float _cam_noise_std = 1.0f;
 
+    // IMU parameters
     float _acc_noise_std = 0.01f;
     float _gyr_noise_std = 0.1f;
-    float _cam_noise_std = 1.0f;
 
     //----- Simulated data -----//
     std::vector<Eigen::Vector2f> _gt_pos;

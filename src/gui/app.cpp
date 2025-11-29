@@ -29,35 +29,42 @@ void App::update() {
 }
 
 void App::render() {
-   ImGui::Text("Some cool MSCKF is about to show up here");
-
-   if (render_config() || _first_render) {
+    if (render_config() || _first_render) {
         _first_render = false;
         simulate();
         estimate();
     }
 
-   if (ImPlot::BeginPlot("Position")) {
-       plot_2d_path("Ground-truth", _gt_pos, Color::Green());
-       plot_2d_path("Estimated", _est_pos, Color::Red());
-       ImPlot::EndPlot();
-   }
+    if (ImGui::CollapsingHeader("Output", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImPlot::BeginPlot("Position")) {
+            plot_2d_path("Ground-truth", _gt_pos, Color::Green());
+            plot_2d_path("Estimated", _est_pos, Color::Red());
+            ImPlot::EndPlot();
+        }
+    }
 }
 
 bool App::render_config() {
     bool updated = false;
-    if(ImGui::CollapsingHeader("Config", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Config", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Indent();
         ImGui::PushItemWidth(100);
+
+        ImGui::Text("General");
         updated |= ImGui::DragInt("Num of steps", &_num_steps);
         updated |= ImGui::DragInt("Num of landmarks", &_num_landmarks);
+        ImGui::Spacing();
 
-        updated |= ImGui::DragInt("Camera width (px)", &_cam_width);
-        updated |= ImGui::DragFloat("Camera FOV (deg)", &_cam_fov);
-
-        updated |= ImGui::DragFloat("IMU acc noise std", &_acc_noise_std);
-        updated |= ImGui::DragFloat("IMU gyr noise std", &_gyr_noise_std);
+        ImGui::Text("Camera Config");
+        updated |= ImGui::DragInt("Width (px)", &_cam_width);
+        updated |= ImGui::DragFloat("FOV (deg)", &_cam_fov);
         updated |= ImGui::DragFloat("Camera noise std", &_cam_noise_std);
+        ImGui::Spacing();
+
+        ImGui::Text("IMU Config");
+        updated |= ImGui::DragFloat("Accel noise std", &_acc_noise_std);
+        updated |= ImGui::DragFloat("Gyro noise std", &_gyr_noise_std);
+
         ImGui::PopItemWidth();
         ImGui::Unindent();
     }
@@ -65,19 +72,19 @@ bool App::render_config() {
 }
 
 void App::simulate() {
-   _gt_pos.resize(_num_steps);
-   _est_pos.clear();
+    _gt_pos.resize(_num_steps);
+    _est_pos.clear();
 
-   _gt_pos[0] = {0.0f, 0.0f};
-   for (size_t i = 1; i < _num_steps; i++) {
-       _gt_pos[i] = _gt_pos[i-1] + Eigen::Vector2f(1.0f, 0.0f);
-   }
+    _gt_pos[0] = {0.0f, 0.0f};
+    for (size_t i = 1; i < _num_steps; i++) {
+        _gt_pos[i] = _gt_pos[i - 1] + Eigen::Vector2f(1.0f, 0.0f);
+    }
 }
 
 void App::estimate() {
-   _est_pos.resize(_num_steps);
-   _est_pos[0] = {0.0f, 10.0f};
-   for (size_t i = 1; i < _num_steps; i++) {
-       _est_pos[i] = _gt_pos[i] + Eigen::Vector2f(0.0f, 10.0f);
-   }
+    _est_pos.resize(_num_steps);
+    _est_pos[0] = {0.0f, 10.0f};
+    for (size_t i = 1; i < _num_steps; i++) {
+        _est_pos[i] = _gt_pos[i] + Eigen::Vector2f(0.0f, 10.0f);
+    }
 }

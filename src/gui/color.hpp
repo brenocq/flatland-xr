@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include "imgui.h"
+#include <Eigen/Dense>
 
 class Color : public Eigen::Vector4f {
-public:
+  public:
     Color(float r, float g, float b, float a = 1.0f) : Eigen::Vector4f(r, g, b, a) {}
 
     explicit operator ImVec4() const { return ImVec4(r(), g(), b(), a()); }

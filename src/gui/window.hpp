@@ -8,7 +8,7 @@
 struct GLFWwindow;
 
 class Window {
-public:
+  public:
     Window(const std::string& name, size_t width, size_t height);
 
     /// Create the OS window
@@ -26,7 +26,7 @@ public:
     // Render the current frame and display it on the OS window
     void end_frame();
 
-private:
+  private:
     std::string _name;
     size_t _width;
     size_t _height;
