@@ -26,6 +26,9 @@ class App {
     /// Render config header to setup simulation parameters. Returns true if the config changed.
     bool render_config();
 
+    /// Render world editor for drawing trajectory and placing landmarks
+    void render_world_editor();
+
     /// Render sensor measurements
     void render_measurements();
 
