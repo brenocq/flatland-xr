@@ -1,0 +1,7 @@
+line_width: 150
+tab_size: 4
+separate_ctrl_name_with_space: false
+separate_fn_name_with_space: false
+dangle_parens: true
+dangle_align: "prefix"
+max_pargs_hwrap: 2

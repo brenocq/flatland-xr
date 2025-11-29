@@ -7,7 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(FetchContent)
 
 # Setup OpenGL
+# cmake-format: off
 cmake_policy(SET CMP0072 NEW) # Pefer GLVND over legacy GL libraries
+# cmake-format: on
 find_package(OpenGL REQUIRED)
 
 # Setup Eigen
@@ -44,8 +46,8 @@ set(IMGUI_SOURCE
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-	${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-	${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 add_library(imgui STATIC ${IMGUI_SOURCE})
 target_include_directories(imgui PUBLIC "${imgui_SOURCE_DIR};${imgui_SOURCE_DIR}/backends/")
@@ -72,7 +74,6 @@ target_link_libraries(implot PUBLIC imgui)
 set(exe_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(EXE_SOURCE
     ${exe_SOURCE_DIR}/main.cpp
-
     # GUI
     ${exe_SOURCE_DIR}/gui/app.cpp
     ${exe_SOURCE_DIR}/gui/color.cpp
