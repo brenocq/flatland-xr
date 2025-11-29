@@ -38,12 +38,12 @@ void App::render() {
    est_pos[0] = {0.0, 0.0};
    for (size_t i = 1; i < NUM_STEPS; i++) {
        gt_pos[i] = gt_pos[i-1] + Eigen::Vector2d(1.0, 0.0);
-       est_pos[i] = gt_pos[i];
+       est_pos[i] = gt_pos[i] + Eigen::Vector2d(0.0, 10.0);
    }
 
    if (ImPlot::BeginPlot("Position")) {
-       plot_2d_path("Ground-truth", gt_pos);
-       plot_2d_path("Estimated", est_pos);
+       plot_2d_path("Ground-truth", gt_pos, Color::Green());
+       plot_2d_path("Estimated", est_pos, Color::Red());
        ImPlot::EndPlot();
    }
 }
