@@ -24,6 +24,8 @@ void Camera2D::set_fov(float fov_rad) {
     _focal_length = static_cast<float>(_width) / (2.0f * std::tan(fov_rad / 2.0f));
 }
 
+void Camera2D::set_noise_std(float noise_std) { _noise_std = noise_std; }
+
 float Camera2D::fov() const {
     // fov = 2 * atan(width / (2 * fx))
     return 2.0f * std::atan(static_cast<float>(_width) / (2.0f * _focal_length));
@@ -74,6 +76,36 @@ std::vector<LandmarkObservation> Camera2D::project_landmarks(const Eigen::Vector
 
     for (size_t i = 0; i < landmarks.size(); i++) {
         auto u = project(pose, landmarks[i]);
+        if (u.has_value()) {
+            observations.push_back({u.value(), i});
+        }
+    }
+
+    return observations;
+}
+
+std::optional<float> Camera2D::measure(const Eigen::Vector3f& pose, const Eigen::Vector2f& landmark) {
+    auto u = project(pose, landmark);
+    if (!u.has_value()) {
+        return std::nullopt;
+    }
+
+    // Add Gaussian noise
+    std::normal_distribution<float> noise(0.0f, _noise_std);
+    float noisy_u = u.value() + noise(_rng);
+
+    // Clamp to image bounds
+    noisy_u = std::clamp(noisy_u, 0.0f, static_cast<float>(_width));
+
+    return noisy_u;
+}
+
+std::vector<LandmarkObservation> Camera2D::measure_landmarks(const Eigen::Vector3f& pose, const std::vector<Eigen::Vector2f>& landmarks) {
+    std::vector<LandmarkObservation> observations;
+    observations.reserve(landmarks.size());
+
+    for (size_t i = 0; i < landmarks.size(); i++) {
+        auto u = measure(pose, landmarks[i]);
         if (u.has_value()) {
             observations.push_back({u.value(), i});
         }

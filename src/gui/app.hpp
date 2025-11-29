@@ -5,6 +5,7 @@
 
 #include <Eigen/Dense>
 #include <camera2d.hpp>
+#include <imu2d.hpp>
 #include <trajectory2d.hpp>
 #include <vector>
 
@@ -70,16 +71,11 @@ class App {
     WorldPreset _current_preset = WorldPreset::Custom;
 
     //----- Simulation Configuration -----//
-    int _num_steps = 100;
-    int _num_landmarks = 10;
+    // Camera model
+    Camera2D _camera;
 
-    // Camera parameters
-    float _cam_noise_std = 1.0f;
-    Camera2D _camera; ///< Camera model for projection
-
-    // IMU parameters
-    float _acc_noise_std = 0.01f;
-    float _gyr_noise_std = 0.1f;
+    // IMU model
+    IMU2D _imu;
 
     //----- Simulated data -----//
     std::vector<Eigen::Vector3f> _gt_pose_raw; ///< Raw poses from mouse input (x, y, orientation)

@@ -5,6 +5,7 @@
 
 #include <Eigen/Dense>
 #include <optional>
+#include <random>
 #include <vector>
 
 /// Observation of a landmark from a camera
@@ -29,6 +30,9 @@ class Camera2D {
     /// Set field of view in radians (adjusts focal_length)
     void set_fov(float fov);
 
+    /// Set measurement noise standard deviation (in pixels)
+    void set_noise_std(float noise_std);
+
     /// Get image width in pixels
     int width() const { return _width; }
 
@@ -41,24 +45,42 @@ class Camera2D {
     /// Get optical center (principal point, cx = width/2)
     float principal_point() const { return _principal_point; }
 
+    /// Get measurement noise standard deviation (in pixels)
+    float noise_std() const { return _noise_std; }
+
     /// Get the intrinsic matrix K (2x3 for 2D: [fx 0 cx; 0 1 0] style, but we use 1D projection)
     /// Returns [fx, cx] for 1D projection: u = fx * (y/x) + cx
     Eigen::Vector2f intrinsics() const { return Eigen::Vector2f(_focal_length, _principal_point); }
 
-    /// Project a single landmark to camera image plane using homogeneous coordinates
+    /// Project a single landmark to camera image plane (no noise)
     /// @param pose Camera pose (x, y, orientation)
     /// @param landmark Landmark position in world coordinates
     /// @return Pixel coordinate u if visible, std::nullopt if outside FOV or behind camera
     std::optional<float> project(const Eigen::Vector3f& pose, const Eigen::Vector2f& landmark) const;
 
-    /// Project multiple landmarks to camera image plane
+    /// Project multiple landmarks to camera image plane (no noise)
     /// @param pose Camera pose (x, y, orientation)
     /// @param landmarks Vector of landmark positions
     /// @return Vector of observations for landmarks within FOV
     std::vector<LandmarkObservation> project_landmarks(const Eigen::Vector3f& pose, const std::vector<Eigen::Vector2f>& landmarks) const;
 
+    /// Generate noisy measurement from ground truth projection
+    /// @param pose Camera pose (x, y, orientation)
+    /// @param landmark Landmark position in world coordinates
+    /// @return Noisy pixel coordinate u if visible, std::nullopt if outside FOV or behind camera
+    std::optional<float> measure(const Eigen::Vector3f& pose, const Eigen::Vector2f& landmark);
+
+    /// Generate noisy measurements for multiple landmarks
+    /// @param pose Camera pose (x, y, orientation)
+    /// @param landmarks Vector of landmark positions
+    /// @return Vector of noisy observations for landmarks within FOV
+    std::vector<LandmarkObservation> measure_landmarks(const Eigen::Vector3f& pose, const std::vector<Eigen::Vector2f>& landmarks);
+
   private:
     int _width = 100;               ///< Image width in pixels
     float _focal_length = 100.0f;   ///< Focal length in pixels (fx)
     float _principal_point = 50.0f; ///< Principal point (cx = width/2)
+    float _noise_std = 1.0f;        ///< Measurement noise standard deviation (pixels)
+
+    std::mt19937 _rng{std::random_device{}()}; ///< Random number generator
 };

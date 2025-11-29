@@ -75,6 +75,7 @@ set(exe_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(EXE_SOURCE
     ${exe_SOURCE_DIR}/main.cpp
     ${exe_SOURCE_DIR}/camera2d.cpp
+    ${exe_SOURCE_DIR}/imu2d.cpp
     ${exe_SOURCE_DIR}/trajectory2d.cpp
     # GUI
     ${exe_SOURCE_DIR}/gui/app.cpp

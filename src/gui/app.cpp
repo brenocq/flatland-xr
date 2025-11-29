@@ -12,6 +12,11 @@ App::App() {}
 
 void App::startup() {
     _camera.set_intrinsics(100, 60.0f * M_PI / 180.0f);
+    _camera.set_noise_std(1.0f);
+    _imu.set_acc_bias(Eigen::Vector2f(0.0f, 0.0f));
+    _imu.set_gyr_bias(0.0f);
+    _imu.set_acc_noise_std(Eigen::Vector2f(0.01f, 0.01f));
+    _imu.set_gyr_noise_std(0.001f);
     load_world_preset(WorldPreset::ASquaresHouse); // Load default preset
 }
 
@@ -533,14 +538,10 @@ bool App::render_config() {
         ImGui::Indent();
         ImGui::PushItemWidth(100);
 
-        ImGui::Text("General");
-        updated |= ImGui::DragInt("Num of steps", &_num_steps);
-        updated |= ImGui::DragInt("Num of landmarks", &_num_landmarks);
-        ImGui::Spacing();
-
         ImGui::Text("Camera Config");
         int cam_width = _camera.width();
         float cam_fov_deg = _camera.fov() * 180.0f / M_PI;
+        float cam_noise_std = _camera.noise_std();
         if (ImGui::DragInt("Width (px)", &cam_width)) {
             _camera.set_width(cam_width);
             updated = true;
@@ -549,12 +550,33 @@ bool App::render_config() {
             _camera.set_fov(cam_fov_deg * M_PI / 180.0f);
             updated = true;
         }
-        updated |= ImGui::DragFloat("Camera noise std", &_cam_noise_std);
+        if (ImGui::DragFloat("Camera noise std", &cam_noise_std, 0.1f, 0.0f, 10.0f)) {
+            _camera.set_noise_std(cam_noise_std);
+            updated = true;
+        }
         ImGui::Spacing();
 
         ImGui::Text("IMU Config");
-        updated |= ImGui::DragFloat("Accel noise std", &_acc_noise_std);
-        updated |= ImGui::DragFloat("Gyro noise std", &_gyr_noise_std);
+        Eigen::Vector2f acc_bias = _imu.acc_bias();
+        Eigen::Vector2f acc_noise_std = _imu.acc_noise_std();
+        float gyr_bias = _imu.gyr_bias();
+        float gyr_noise_std = _imu.gyr_noise_std();
+        if (ImGui::DragFloat2("Accel bias", acc_bias.data(), 0.01f, -1.0f, 1.0f)) {
+            _imu.set_acc_bias(acc_bias);
+            updated = true;
+        }
+        if (ImGui::DragFloat2("Accel noise std", acc_noise_std.data(), 0.001f, 0.0f, 1.0f)) {
+            _imu.set_acc_noise_std(acc_noise_std);
+            updated = true;
+        }
+        if (ImGui::DragFloat("Gyro bias", &gyr_bias, 0.001f, -0.1f, 0.1f)) {
+            _imu.set_gyr_bias(gyr_bias);
+            updated = true;
+        }
+        if (ImGui::DragFloat("Gyro noise std", &gyr_noise_std, 0.0001f, 0.0f, 0.1f)) {
+            _imu.set_gyr_noise_std(gyr_noise_std);
+            updated = true;
+        }
 
         ImGui::PopItemWidth();
         ImGui::Unindent();
