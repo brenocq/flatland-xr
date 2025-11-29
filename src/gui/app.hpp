@@ -60,7 +60,7 @@ class App {
     float _gyr_noise_std = 0.1f;
 
     //----- Simulated data -----//
-    std::vector<Eigen::Vector2f> _gt_pos;
+    std::vector<Eigen::Vector3f> _gt_pose; ///< Ground truth poses (x, y, orientation)
     std::vector<Eigen::Vector2f> _landmarks;
 
     // For simplicity, all measurements are available at each time step
