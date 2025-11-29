@@ -23,9 +23,13 @@ class Color : public Eigen::Vector4f {
     float& a() { return w(); }
 
     static Color Auto() { return Color(0.0f, 0.0f, 0.0f, -1.0f); }
-    static Color Red() { return Color(1.0f, 0.0f, 0.0f); }
-    static Color Green() { return Color(0.0f, 1.0f, 0.0f); }
+    static Color Black() { return Color(0.0f, 0.0f, 0.0f); }
     static Color Blue() { return Color(0.0f, 0.0f, 1.0f); }
+    static Color Green() { return Color(0.0f, 1.0f, 0.0f); }
+    static Color Cyan() { return Color(0.0f, 1.0f, 1.0f); }
+    static Color Red() { return Color(1.0f, 0.0f, 0.0f); }
+    static Color Magenta() { return Color(1.0f, 0.0f, 1.0f); }
     static Color Yellow() { return Color(1.0f, 1.0f, 0.0f); }
+    static Color White() { return Color(1.0f, 1.0f, 1.0f); }
     static Color Random(size_t index);
 };

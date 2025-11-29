@@ -118,6 +118,118 @@ void App::build_trajectory_from_raw_poses() {
     _gt_trajectory.build(subsampled);
 }
 
+void App::build_wall_from_raw_points() {
+    if (_wall_raw_points.size() < 2) {
+        return;
+    }
+
+    // Smooth wall points using moving average
+    std::vector<Eigen::Vector2f> smoothed;
+    smoothed.reserve(_wall_raw_points.size());
+
+    const int window = 3;
+    for (size_t i = 0; i < _wall_raw_points.size(); i++) {
+        float sum_x = 0, sum_y = 0;
+        int count = 0;
+
+        for (int j = -window; j <= window; j++) {
+            int idx = static_cast<int>(i) + j;
+            if (idx >= 0 && idx < static_cast<int>(_wall_raw_points.size())) {
+                sum_x += _wall_raw_points[idx].x();
+                sum_y += _wall_raw_points[idx].y();
+                count++;
+            }
+        }
+        smoothed.push_back(Eigen::Vector2f(sum_x / count, sum_y / count));
+    }
+
+    // Simplify wall by merging line segments with similar angles (Ramer-Douglas-Peucker style)
+    std::vector<Eigen::Vector2f> simplified;
+    simplified.push_back(smoothed.front());
+
+    const float angle_threshold = 0.3f; // ~17 degrees - aggressive merging
+
+    for (size_t i = 1; i < smoothed.size(); i++) {
+        if (simplified.size() < 2) {
+            simplified.push_back(smoothed[i]);
+            continue;
+        }
+
+        // Get direction of current segment (from second-to-last to last simplified point)
+        Eigen::Vector2f prev_dir = simplified.back() - simplified[simplified.size() - 2];
+        prev_dir.normalize();
+
+        // Get direction to new point
+        Eigen::Vector2f new_dir = smoothed[i] - simplified.back();
+        float new_len = new_dir.norm();
+        if (new_len < 1e-6f)
+            continue;
+        new_dir.normalize();
+
+        // Check angle between directions
+        float dot = prev_dir.dot(new_dir);
+        dot = std::clamp(dot, -1.0f, 1.0f);
+        float angle = std::acos(dot);
+
+        if (angle < angle_threshold) {
+            // Similar direction - merge by moving last point
+            simplified.back() = smoothed[i];
+        } else {
+            // Different direction - add new point
+            simplified.push_back(smoothed[i]);
+        }
+    }
+
+    // Only add wall if it has at least 2 points
+    if (simplified.size() >= 2) {
+        // Update or create current wall
+        if (_walls.empty() || _wall_raw_points.size() == 1) {
+            _walls.push_back({simplified});
+        } else {
+            _walls.back().points = simplified;
+        }
+    }
+}
+
+// Helper: check if two line segments intersect
+static bool segments_intersect(const Eigen::Vector2f& p1, const Eigen::Vector2f& p2, const Eigen::Vector2f& p3, const Eigen::Vector2f& p4) {
+    Eigen::Vector2f d1 = p2 - p1;
+    Eigen::Vector2f d2 = p4 - p3;
+
+    float cross = d1.x() * d2.y() - d1.y() * d2.x();
+    if (std::abs(cross) < 1e-10f)
+        return false; // Parallel
+
+    Eigen::Vector2f d3 = p3 - p1;
+    float t = (d3.x() * d2.y() - d3.y() * d2.x()) / cross;
+    float u = (d3.x() * d1.y() - d3.y() * d1.x()) / cross;
+
+    // Intersection within segments (with small epsilon to avoid endpoint issues)
+    return t > 0.001f && t < 0.999f && u > 0.001f && u < 0.999f;
+}
+
+bool App::is_landmark_occluded_by_walls(const Eigen::Vector2f& camera_pos, const Eigen::Vector2f& landmark) const {
+    for (const auto& wall : _walls) {
+        for (size_t i = 0; i + 1 < wall.points.size(); i++) {
+            if (segments_intersect(camera_pos, landmark, wall.points[i], wall.points[i + 1])) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+std::vector<Eigen::Vector2f> App::filter_visible_landmarks(const Eigen::Vector2f& camera_pos) const {
+    std::vector<Eigen::Vector2f> visible;
+    visible.reserve(_landmarks.size());
+    for (const auto& lm : _landmarks) {
+        if (!is_landmark_occluded_by_walls(camera_pos, lm)) {
+            visible.push_back(lm);
+        }
+    }
+    return visible;
+}
+
 void App::estimate() {
     _est_pos.clear();
     if (!_gt_trajectory.is_valid())
@@ -171,6 +283,8 @@ void App::render_world_editor() {
     static ImVec2 trajectory_drag_start_pos;
     static bool landmark_click_started = false;
     static ImVec2 landmark_click_start_pos;
+    static bool wall_drag_started = false;
+    static ImVec2 wall_drag_start_pos;
 
     if (ImGui::CollapsingHeader("World Editor", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::TextWrapped("Ctrl+Click: Add new landmark | Ctrl+Drag: Draw trajectory");
@@ -185,7 +299,20 @@ void App::render_world_editor() {
         if (ImGui::Button("Clear all landmarks"))
             _landmarks.clear();
 
-        if (ImPlot::BeginPlot("##WorldEditor", ImVec2(-1, 400), ImPlotFlags_Equal)) {
+        ImGui::TextWrapped("Shift+Drag: Draw wall");
+        ImGui::SameLine();
+        if (ImGui::Button("Clear all walls")) {
+            _walls.clear();
+            _wall_raw_points.clear();
+        }
+
+        // Disable plot panning when Ctrl or Shift is held (we're drawing)
+        ImPlotFlags plot_flags = ImPlotFlags_Equal;
+        if (ImGui::GetIO().KeyCtrl || ImGui::GetIO().KeyShift) {
+            plot_flags |= ImPlotFlags_NoInputs;
+        }
+
+        if (ImPlot::BeginPlot("##WorldEditor", ImVec2(-1, 400), plot_flags)) {
             ImPlot::SetupAxes("X (m)", "Y (m)");
 
             // Get plot limits and mouse position
@@ -254,6 +381,45 @@ void App::render_world_editor() {
             if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
                 trajectory_drag_started = false;
                 landmark_click_started = false;
+                if (wall_drag_started) {
+                    wall_drag_started = false;
+                    _wall_raw_points.clear(); // Clear raw points after wall is finalized
+                }
+            }
+
+            // Handle Shift+drag to draw walls
+            if (is_hovered && ImGui::GetIO().KeyShift && !ImGui::GetIO().KeyCtrl) {
+                if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                    wall_drag_started = true;
+                    wall_drag_start_pos = ImGui::GetMousePos();
+                    _wall_raw_points.clear();
+                }
+
+                if (wall_drag_started && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+                    ImVec2 current_pos = ImGui::GetMousePos();
+                    float drag_dist =
+                        std::sqrt(std::pow(current_pos.x - wall_drag_start_pos.x, 2) + std::pow(current_pos.y - wall_drag_start_pos.y, 2));
+
+                    if (drag_dist > 3.0f) {
+                        // Start a new wall if this is the first point
+                        if (_wall_raw_points.empty()) {
+                            _walls.push_back(Wall{});
+                        }
+
+                        bool should_add = true;
+                        if (!_wall_raw_points.empty()) {
+                            ImPlotPoint last_plot(_wall_raw_points.back().x(), _wall_raw_points.back().y());
+                            ImVec2 last_px = ImPlot::PlotToPixels(last_plot);
+                            ImVec2 mouse_px_check = ImPlot::PlotToPixels(mouse);
+                            float dist = std::sqrt(std::pow(mouse_px_check.x - last_px.x, 2) + std::pow(mouse_px_check.y - last_px.y, 2));
+                            should_add = dist > 1.0f;
+                        }
+                        if (should_add) {
+                            _wall_raw_points.push_back(Eigen::Vector2f(mouse.x, mouse.y));
+                            build_wall_from_raw_points();
+                        }
+                    }
+                }
             }
 
             // Find closest point (landmark or GT) for tooltip
@@ -298,23 +464,35 @@ void App::render_world_editor() {
                 float last_t = _gt_trajectory.max_t();
                 Eigen::Vector3f pose = _gt_trajectory.pose(last_t);
                 Eigen::Vector2f pos(pose.x(), pose.y());
-                auto observations = _camera.project_landmarks(pose, _landmarks);
+                // Filter landmarks by wall occlusion, keeping track of original indices
+                std::vector<LandmarkObservation> observations;
+                for (size_t i = 0; i < _landmarks.size(); i++) {
+                    if (!is_landmark_occluded_by_walls(pos, _landmarks[i])) {
+                        auto u = _camera.project(pose, _landmarks[i]);
+                        if (u.has_value()) {
+                            observations.push_back({u.value(), i});
+                        }
+                    }
+                }
                 plot_2d_camera_frustum("##DrawingCamera", pos, pose.z(), _camera.fov(), 1.0f, Color::Blue());
                 plot_2d_camera_rays("##DrawingRays", pos, _landmarks, observations, 1.0f);
                 plot_2d_camera_observations("##DrawingObs", pos, pose.z(), _camera, observations);
             } else {
                 // Show tooltip for closest point and camera preview for poses
                 if (closest_landmark >= 0) {
-                    // Count observations for this landmark
+                    // Count observations for this landmark (considering wall occlusion)
                     int obs_count = 0;
                     if (_gt_trajectory.is_valid()) {
                         int num_poses = static_cast<int>(_gt_trajectory.max_t()) + 1;
                         for (int t = 0; t < num_poses; t++) {
                             Eigen::Vector3f pose = _gt_trajectory.pose(static_cast<float>(t));
+                            Eigen::Vector2f pos(pose.x(), pose.y());
+                            // Check wall occlusion before projecting
+                            if (is_landmark_occluded_by_walls(pos, _landmarks[closest_landmark]))
+                                continue;
                             auto u = _camera.project(pose, _landmarks[closest_landmark]);
                             if (u.has_value()) {
                                 obs_count++;
-                                Eigen::Vector2f pos(pose.x(), pose.y());
                                 // Only show observation for the hovered landmark
                                 std::vector<LandmarkObservation> single_obs = {{u.value(), static_cast<size_t>(closest_landmark)}};
                                 plot_2d_camera_frustum("##LandmarkHoverCamera", pos, pose.z(), _camera.fov(), 1.0f, Color::Blue());
@@ -327,9 +505,17 @@ void App::render_world_editor() {
                                       _landmarks[closest_landmark].y(), obs_count);
                 } else if (closest_gt >= 0 && _gt_trajectory.is_valid()) {
                     Eigen::Vector3f pose = _gt_trajectory.pose(static_cast<float>(closest_gt));
-                    // Draw camera frustum with projected landmarks
+                    // Draw camera frustum with projected landmarks (filtered by walls)
                     Eigen::Vector2f pos(pose.x(), pose.y());
-                    auto observations = _camera.project_landmarks(pose, _landmarks);
+                    std::vector<LandmarkObservation> observations;
+                    for (size_t i = 0; i < _landmarks.size(); i++) {
+                        if (!is_landmark_occluded_by_walls(pos, _landmarks[i])) {
+                            auto u = _camera.project(pose, _landmarks[i]);
+                            if (u.has_value()) {
+                                observations.push_back({u.value(), i});
+                            }
+                        }
+                    }
                     ImGui::SetTooltip("GT Pose %d\nPos: (%.2f, %.2f)\nOrientation: %.2f°\nObservations: %zu", closest_gt, pose.x(), pose.y(),
                                       pose.z() * 180.0f / M_PI, observations.size());
                     plot_2d_camera_frustum("##HoverCamera", pos, pose.z(), _camera.fov(), 1.0f, Color::Blue());
@@ -368,6 +554,50 @@ void App::render_world_editor() {
             }
             if (landmark_to_delete >= 0) {
                 _landmarks.erase(_landmarks.begin() + landmark_to_delete);
+            }
+
+            // Render walls (plain white)
+            int wall_to_delete = -1;
+            for (size_t w = 0; w < _walls.size(); w++) {
+                const auto& wall = _walls[w];
+                if (wall.points.size() >= 2) {
+                    plot_2d_line("##Wall" + std::to_string(w), wall.points, Color::White(), 2.0f);
+
+                    // Check if mouse is near any segment of this wall for context menu
+                    for (size_t i = 0; i + 1 < wall.points.size(); i++) {
+                        ImVec2 p1_px = ImPlot::PlotToPixels(ImPlotPoint(wall.points[i].x(), wall.points[i].y()));
+                        ImVec2 p2_px = ImPlot::PlotToPixels(ImPlotPoint(wall.points[i + 1].x(), wall.points[i + 1].y()));
+
+                        // Distance from mouse to line segment
+                        float dx = p2_px.x - p1_px.x;
+                        float dy = p2_px.y - p1_px.y;
+                        float len_sq = dx * dx + dy * dy;
+                        float t = 0.0f;
+                        if (len_sq > 0) {
+                            t = std::clamp(((mouse_px.x - p1_px.x) * dx + (mouse_px.y - p1_px.y) * dy) / len_sq, 0.0f, 1.0f);
+                        }
+                        float closest_x = p1_px.x + t * dx;
+                        float closest_y = p1_px.y + t * dy;
+                        float dist = std::sqrt(std::pow(mouse_px.x - closest_x, 2) + std::pow(mouse_px.y - closest_y, 2));
+
+                        if (dist < 10.0f && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+                            ImGui::OpenPopup(("WallContext" + std::to_string(w)).c_str());
+                            break;
+                        }
+                    }
+                }
+
+                if (ImGui::BeginPopup(("WallContext" + std::to_string(w)).c_str())) {
+                    ImGui::Text("Wall %zu (%zu segments)", w, wall.points.size() > 0 ? wall.points.size() - 1 : 0);
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Delete")) {
+                        wall_to_delete = static_cast<int>(w);
+                    }
+                    ImGui::EndPopup();
+                }
+            }
+            if (wall_to_delete >= 0) {
+                _walls.erase(_walls.begin() + wall_to_delete);
             }
 
             ImPlot::EndPlot();

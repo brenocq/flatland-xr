@@ -49,6 +49,15 @@ class App {
     /// Estimate state given sensor measurements
     void estimate();
 
+    /// Smooth raw wall points and build simplified wall
+    void build_wall_from_raw_points();
+
+    /// Check if a ray from camera to landmark is blocked by any wall
+    bool is_landmark_occluded_by_walls(const Eigen::Vector2f& camera_pos, const Eigen::Vector2f& landmark) const;
+
+    /// Filter landmarks that are visible (not occluded by walls)
+    std::vector<Eigen::Vector2f> filter_visible_landmarks(const Eigen::Vector2f& camera_pos) const;
+
     bool _first_render = true;
 
     //----- Simulation Configuration -----//
@@ -67,6 +76,13 @@ class App {
     std::vector<Eigen::Vector3f> _gt_pose_raw; ///< Raw poses from mouse input (x, y, orientation)
     Trajectory2D _gt_trajectory;               ///< Smoothed ground truth trajectory
     std::vector<Eigen::Vector2f> _landmarks;
+
+    // Wall data
+    struct Wall {
+        std::vector<Eigen::Vector2f> points; ///< Line segment points forming the wall
+    };
+    std::vector<Wall> _walls;
+    std::vector<Eigen::Vector2f> _wall_raw_points; ///< Raw points while drawing a wall
 
     // For simplicity, all measurements are available at each time step
     // IMU measurements
