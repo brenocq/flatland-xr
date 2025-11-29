@@ -4,10 +4,12 @@
 #include <gui/app.hpp>
 #include "imgui.h"
 #include "implot.h"
+#include <Eigen/Dense>
 
 App::App() {}
 
 void App::startup() {}
+
 void App::shutdown() {}
 
 void App::update() {
@@ -18,9 +20,21 @@ void App::update() {
     ImGui::Begin("MSCKF Playground");
     {
         ImGui::Text("Some cool MSCKF is about to show up here");
+
+
+        const size_t NUM_STEPS = 100;
+        std::vector<Eigen::Vector2d> est_pos(NUM_STEPS);
+        std::vector<Eigen::Vector2d> gt_pos(NUM_STEPS);
+
+        gt_pos[0] = {0.0f, 0.0f};
+        est_pos[0] = {0.0f, 0.0f};
+        for(size_t i = 1; i < NUM_STEPS; i++) {
+            gt_pos[i] = gt_pos[i-1] + Eigen::Vector2d(1.0f, 0.0f);
+            est_pos[i] = gt_pos[i];
+        }
     }
     ImGui::End();
 
-    ImGui::ShowDemoWindow();
-    ImPlot::ShowDemoWindow();
+    // ImGui::ShowDemoWindow();
+    // ImPlot::ShowDemoWindow();
 }

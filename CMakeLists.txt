@@ -55,6 +55,17 @@ add_library(implot STATIC ${IMPLOT_SOURCE})
 target_include_directories(implot PUBLIC ${implot_SOURCE_DIR})
 target_link_libraries(implot PUBLIC imgui)
 
+# Setup Eigen
+#set(FETCHCONTENT_QUIET OFF)
+#FetchContent_Declare(
+#    Eigen
+#    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+#    GIT_TAG 3.4.0
+#    GIT_SHALLOW TRUE
+#)
+#FetchContent_MakeAvailable(Eigen)
+find_package(Eigen3)
+
 # Setup executable
 set(exe_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(EXE_SOURCE
@@ -66,7 +77,7 @@ set(EXE_SOURCE
 )
 add_executable(msckf_playground ${EXE_SOURCE})
 target_include_directories(msckf_playground PRIVATE ${exe_SOURCE_DIR})
-target_link_libraries(msckf_playground PRIVATE implot)
+target_link_libraries(msckf_playground PRIVATE implot Eigen3::Eigen)
 
 # Silence OpenGL deprecation warnings on macOS
 if(APPLE)

@@ -7,7 +7,10 @@ class App {
 public:
     App();
 
+    /// Startup app internal data structures
     void startup();
+
+    /// Shutdown the app and cleanup internal data structures
     void shutdown();
 
     /// Update app logic and render frame
