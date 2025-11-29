@@ -9,3 +9,5 @@
 #include <vector>
 
 void plot_2d_path(const std::string& label, const std::vector<Eigen::Vector2f>& positions, const Color& color = Color::Auto(), float weight = -1.0f);
+void plot_2d_line(const std::string& label, const std::vector<Eigen::Vector2f>& positions, const Color& color = Color::Auto(), float weight = -1.0f);
+void plot_2d_scatter(const std::string& label, const std::vector<Eigen::Vector2f>& positions, const Color& color = Color::Auto(), float size = -1.0f);

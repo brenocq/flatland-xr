@@ -85,12 +85,14 @@ bool App::render_config() {
 }
 
 void App::render_world_editor() {
+    static bool trajectory_drag_started = false;
+    static ImVec2 trajectory_drag_start_pos;
     static bool landmark_click_started = false;
     static ImVec2 landmark_click_start_pos;
 
     if (ImGui::CollapsingHeader("World Editor"), ImGuiTreeNodeFlags_DefaultOpen) {
-        ImGui::TextWrapped("Ctrl+Drag: Draw ground truth trajectory (clears previous)");
-        ImGui::TextWrapped("Click: Add new landmark");
+        ImGui::TextWrapped("Ctrl+Click: Add new landmark | Ctrl+Drag: Draw trajectory");
+        ImGui::TextWrapped("Right-click landmark: Delete");
 
         if (ImPlot::BeginPlot("##WorldEditor", ImVec2(-1, 400))) {
             ImPlot::SetupAxes("X (m)", "Y (m)");
@@ -99,35 +101,43 @@ void App::render_world_editor() {
             ImPlotPoint mouse = ImPlot::GetPlotMousePos();
             bool is_hovered = ImPlot::IsPlotHovered();
 
-            // Handle Ctrl+drag to draw trajectory
+            // Handle Ctrl+click to add landmark or Ctrl+drag to draw trajectory
             if (is_hovered && ImGui::GetIO().KeyCtrl) {
-                // Clear trajectory when Ctrl+click starts
                 if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    _gt_pos.clear();
-                }
-
-                if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-                    bool should_add = true;
-                    if (!_gt_pos.empty()) {
-                        // Convert last position and current mouse to pixels
-                        ImPlotPoint last_plot(_gt_pos.back().x(), _gt_pos.back().y());
-                        ImVec2 last_px = ImPlot::PlotToPixels(last_plot);
-                        ImVec2 mouse_px = ImPlot::PlotToPixels(mouse);
-                        float dist = std::sqrt(std::pow(mouse_px.x - last_px.x, 2) + std::pow(mouse_px.y - last_px.y, 2));
-                        should_add = dist > 1.0f;
-                    }
-                    if (should_add) {
-                        _gt_pos.push_back(Eigen::Vector2f(mouse.x, mouse.y));
-                    }
-                }
-            }
-
-            // Handle click to add landmark (without Ctrl) - only if mouse didn't move much
-            if (is_hovered && !ImGui::GetIO().KeyCtrl) {
-                if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                    trajectory_drag_started = true;
+                    trajectory_drag_start_pos = ImGui::GetMousePos();
                     landmark_click_started = true;
                     landmark_click_start_pos = ImGui::GetMousePos();
                 }
+
+                if (trajectory_drag_started && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+                    ImVec2 current_pos = ImGui::GetMousePos();
+                    float drag_dist = std::sqrt(std::pow(current_pos.x - trajectory_drag_start_pos.x, 2) +
+                                                std::pow(current_pos.y - trajectory_drag_start_pos.y, 2));
+
+                    // If dragged more than threshold, switch to trajectory drawing mode
+                    if (drag_dist > 5.0f) {
+                        // Clear trajectory on first drag movement
+                        if (landmark_click_started) {
+                            _gt_pos.clear();
+                            landmark_click_started = false;
+                        }
+
+                        bool should_add = true;
+                        if (!_gt_pos.empty()) {
+                            ImPlotPoint last_plot(_gt_pos.back().x(), _gt_pos.back().y());
+                            ImVec2 last_px = ImPlot::PlotToPixels(last_plot);
+                            ImVec2 mouse_px = ImPlot::PlotToPixels(mouse);
+                            float dist = std::sqrt(std::pow(mouse_px.x - last_px.x, 2) + std::pow(mouse_px.y - last_px.y, 2));
+                            should_add = dist > 1.0f;
+                        }
+                        if (should_add) {
+                            _gt_pos.push_back(Eigen::Vector2f(mouse.x, mouse.y));
+                        }
+                    }
+                }
+
+                // On release, if we didn't drag much, add a landmark
                 if (landmark_click_started && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
                     ImVec2 current_pos = ImGui::GetMousePos();
                     float dist =
@@ -135,27 +145,84 @@ void App::render_world_editor() {
                     if (dist < 5.0f) {
                         _landmarks.push_back(Eigen::Vector2f(mouse.x, mouse.y));
                     }
-                    landmark_click_started = false;
                 }
             }
 
-            // Reset click tracking if mouse released
+            // Reset tracking on mouse release
             if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+                trajectory_drag_started = false;
                 landmark_click_started = false;
             }
 
-            // Render landmarks as draggable points
+            // Find closest point (landmark or GT) for tooltip
+            ImVec2 mouse_px = ImGui::GetMousePos();
+            float closest_dist = 5.0f;
+            int closest_landmark = -1;
+            int closest_gt = -1;
+
+            for (size_t i = 0; i < _landmarks.size(); i++) {
+                ImVec2 lm_px = ImPlot::PlotToPixels(ImPlotPoint(_landmarks[i].x(), _landmarks[i].y()));
+                float dist = std::sqrt(std::pow(mouse_px.x - lm_px.x, 2) + std::pow(mouse_px.y - lm_px.y, 2));
+                if (dist < closest_dist) {
+                    closest_dist = dist;
+                    closest_landmark = static_cast<int>(i);
+                    closest_gt = -1;
+                }
+            }
+
+            for (size_t i = 0; i < _gt_pos.size(); i++) {
+                ImVec2 gt_px = ImPlot::PlotToPixels(ImPlotPoint(_gt_pos[i].x(), _gt_pos[i].y()));
+                float dist = std::sqrt(std::pow(mouse_px.x - gt_px.x, 2) + std::pow(mouse_px.y - gt_px.y, 2));
+                if (dist < closest_dist) {
+                    closest_dist = dist;
+                    closest_gt = static_cast<int>(i);
+                    closest_landmark = -1;
+                }
+            }
+
+            // Show tooltip for closest point
+            if (closest_landmark >= 0) {
+                ImGui::SetTooltip("Landmark %d\nPos: (%.2f, %.2f)", closest_landmark, _landmarks[closest_landmark].x(),
+                                  _landmarks[closest_landmark].y());
+            } else if (closest_gt >= 0) {
+                ImGui::SetTooltip("GT Point %d\nPos: (%.2f, %.2f)", closest_gt, _gt_pos[closest_gt].x(), _gt_pos[closest_gt].y());
+            }
+
+            // Render landmarks as draggable points with context menu
+            int landmark_to_delete = -1;
             for (size_t i = 0; i < _landmarks.size(); i++) {
                 double x = _landmarks[i].x();
                 double y = _landmarks[i].y();
                 if (ImPlot::DragPoint(static_cast<int>(i), &x, &y, ImVec4(1, 0.5f, 0, 1), 4.0f)) {
                     _landmarks[i] = Eigen::Vector2f(x, y);
                 }
+
+                // Check if mouse is hovering this landmark for context menu
+                ImVec2 lm_px = ImPlot::PlotToPixels(ImPlotPoint(x, y));
+                float dist = std::sqrt(std::pow(mouse_px.x - lm_px.x, 2) + std::pow(mouse_px.y - lm_px.y, 2));
+                if (dist < 10.0f) {
+                    if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+                        ImGui::OpenPopup(("LandmarkContext" + std::to_string(i)).c_str());
+                    }
+                }
+
+                if (ImGui::BeginPopup(("LandmarkContext" + std::to_string(i)).c_str())) {
+                    ImGui::Text("Landmark %zu", i);
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Delete")) {
+                        landmark_to_delete = static_cast<int>(i);
+                    }
+                    ImGui::EndPopup();
+                }
+            }
+            if (landmark_to_delete >= 0) {
+                _landmarks.erase(_landmarks.begin() + landmark_to_delete);
             }
 
-            // Render trajectory using plot_2d_path
+            // Render trajectory using plot_2d_line and scatter
             if (!_gt_pos.empty()) {
-                plot_2d_path("Trajectory", _gt_pos, Color::Green());
+                plot_2d_line("Trajectory", _gt_pos, Color::Green());
+                plot_2d_scatter("Trajectory", _gt_pos, Color::Green(), 1.0f);
             }
 
             ImPlot::EndPlot();
