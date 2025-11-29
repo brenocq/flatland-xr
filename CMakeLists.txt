@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(MSCKFPlayground LANGUAGES CXX C)
+project(lineland-xr LANGUAGES CXX C)
 
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 11)
@@ -10,27 +10,34 @@ include(FetchContent)
 cmake_policy(SET CMP0072 NEW) # Pefer GLVND over legacy GL libraries
 find_package(OpenGL REQUIRED)
 
+# Setup Eigen
+FetchContent_Declare(
+    eigen
+    GIT_REPOSITORY "https://gitlab.com/libeigen/eigen.git"
+    GIT_TAG "3.4.0"
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(eigen)
+
 # Setup GLFW
-#FetchContent_Declare(
-#    glfw
-#    GIT_REPOSITORY "https://github.com/glfw/glfw"
-#    GIT_TAG "3.3.8"
-#    GIT_PROGRESS TRUE
-#    GIT_SHALLOW TRUE
-#)
-#FetchContent_MakeAvailable(glfw)
-find_package(glfw3 REQUIRED)
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY "https://github.com/glfw/glfw"
+    GIT_TAG "3.3.8"
+    GIT_PROGRESS TRUE
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(glfw)
 
 # Setup ImGui
-#FetchContent_Declare(
-#    imgui
-#    GIT_REPOSITORY "https://github.com/ocornut/imgui"
-#    GIT_TAG "v1.92.4"
-#    GIT_PROGRESS TRUE
-#    GIT_SHALLOW TRUE
-#)
-#FetchContent_MakeAvailable(imgui)
-set(imgui_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/imgui-src)
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY "https://github.com/ocornut/imgui"
+    GIT_TAG "v1.92.5-docking"
+    GIT_PROGRESS TRUE
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(imgui)
 set(IMGUI_SOURCE
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_demo.cpp
@@ -45,7 +52,13 @@ target_include_directories(imgui PUBLIC "${imgui_SOURCE_DIR};${imgui_SOURCE_DIR}
 target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
 
 # Setup ImPlot
-set(implot_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/implot-src)
+FetchContent_Declare(
+    implot
+    GIT_REPOSITORY "https://github.com/epezent/implot"
+    GIT_TAG "8a9d793e47ca8de526c401b6bc788e1ff2967a31"
+    GIT_PROGRESS TRUE
+)
+FetchContent_MakeAvailable(implot)
 set(IMPLOT_SOURCE
     ${implot_SOURCE_DIR}/implot.cpp
     ${implot_SOURCE_DIR}/implot_demo.cpp
@@ -54,17 +67,6 @@ set(IMPLOT_SOURCE
 add_library(implot STATIC ${IMPLOT_SOURCE})
 target_include_directories(implot PUBLIC ${implot_SOURCE_DIR})
 target_link_libraries(implot PUBLIC imgui)
-
-# Setup Eigen
-#set(FETCHCONTENT_QUIET OFF)
-#FetchContent_Declare(
-#    Eigen
-#    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-#    GIT_TAG 3.4.0
-#    GIT_SHALLOW TRUE
-#)
-#FetchContent_MakeAvailable(Eigen)
-find_package(Eigen3)
 
 # Setup executable
 set(exe_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -77,11 +79,11 @@ set(EXE_SOURCE
     ${exe_SOURCE_DIR}/gui/plot.cpp
     ${exe_SOURCE_DIR}/gui/window.cpp
 )
-add_executable(msckf_playground ${EXE_SOURCE})
-target_include_directories(msckf_playground PRIVATE ${exe_SOURCE_DIR})
-target_link_libraries(msckf_playground PRIVATE implot Eigen3::Eigen)
+add_executable(lineland-xr ${EXE_SOURCE})
+target_include_directories(lineland-xr PRIVATE ${exe_SOURCE_DIR} ${eigen_SOURCE_DIR})
+target_link_libraries(lineland-xr PRIVATE implot Eigen3::Eigen)
 
 # Silence OpenGL deprecation warnings on macOS
 if(APPLE)
-    target_compile_definitions(msckf_playground PRIVATE GL_SILENCE_DEPRECATION)
+    target_compile_definitions(lineland-xr PRIVATE GL_SILENCE_DEPRECATION)
 endif()
