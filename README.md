@@ -1,7 +1,7 @@
 # Lineland XR
 
 <div align="center">
- <img width="150" src="https://github.com/user-attachments/assets/808f6955-9637-4db5-b8c5-70824c916836"/>
+ <img width="150" src="https://github.com/user-attachments/assets/948be9e2-f2f2-43d5-b114-468c9c3752e9"/>
 </div>
 
 ## 📖 Introduction
