@@ -6,6 +6,7 @@
 
 #include <gui/app.hpp>
 #include <gui/plot.hpp>
+#include <iostream>
 
 App::App() {}
 
@@ -30,7 +31,10 @@ void App::update() {
 void App::render() {
    ImGui::Text("Some cool MSCKF is about to show up here");
 
-   render_config();
+   if (render_config() || _first_render) {
+        _first_render = false;
+        simulate();
+    }
 
    const size_t NUM_STEPS = 100;
    std::vector<Eigen::Vector2d> est_pos(NUM_STEPS);
@@ -51,14 +55,30 @@ void App::render() {
    }
 }
 
-void App::render_config() {
+bool App::render_config() {
+    bool updated = false;
     if(ImGui::CollapsingHeader("Config", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Indent();
-        ImGui::Text("Num of steps");
-        ImGui::Text("Num of landmarks");
-        ImGui::Text("IMU acc noise");
-        ImGui::Text("IMU gyr noise");
-        ImGui::Text("Camera noise");
+        ImGui::PushItemWidth(100);
+        updated |= ImGui::DragInt("Num of steps", &_num_steps);
+        updated |= ImGui::DragInt("Num of landmarks", &_num_landmarks);
+
+        updated |= ImGui::DragInt("Camera width (px)", &_cam_width);
+        updated |= ImGui::DragFloat("Camera FOV (deg)", &_cam_fov);
+
+        updated |= ImGui::DragFloat("IMU acc noise std", &_acc_noise_std);
+        updated |= ImGui::DragFloat("IMU gyr noise std", &_gyr_noise_std);
+        updated |= ImGui::DragFloat("Camera noise std", &_cam_noise_std);
+        ImGui::PopItemWidth();
         ImGui::Unindent();
     }
+    return updated;
+}
+
+void App::simulate() {
+    std::cout << "Simulate!\n";
+}
+
+void App::estimate() {
+
 }

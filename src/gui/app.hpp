@@ -20,5 +20,23 @@ private:
     /// Render the app's ImGui window
     void render();
 
-    void render_config();
+    /// Render config header to setup simulation parameters. Returns true if the config changed.
+    bool render_config();
+
+    /// Simulate the sensor measurements
+    void simulate();
+
+    /// Estimate state given sensor measurements
+    void estimate();
+
+    bool _first_render = true;
+    int _num_steps = 100;
+    int _num_landmarks = 10;
+
+    int _cam_width = 100; ///< Camera width in pixels
+    float _cam_fov = 45.0f; ///< Camera FOV in degrees
+
+    float _acc_noise_std = 0.01f;
+    float _gyr_noise_std = 0.1f;
+    float _cam_noise_std = 1.0f;
 };
