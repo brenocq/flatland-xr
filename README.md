@@ -1,12 +1,16 @@
 # Lineland XR
 
+<div align="center">
+ <img width="150" src="https://github.com/user-attachments/assets/808f6955-9637-4db5-b8c5-70824c916836"/>
+</div>
+
 ## 📖 Introduction
 
 **Welcome to the Spatial Computing revolution... for A. Square.**
 
 Imagine if the engineers at a tech giant were tasked with building XR glasses for the inhabitants of Edwin Abbott's novella, Flatland. How do you perform 6-DoF tracking when the universe only has 3 degrees of freedom? How do you do Visual Odometry when your "image" is just a 1D strip of pixels?
 
-**Lineland-XR** is a serious educational sandbox disguised as a geometry joke. It implements a production-grade Visual-Inertial Odometry (VIO) stack, but mathematically projected down to a 2D world.
+**Lineland XR** is a serious educational sandbox disguised as a geometry joke. It implements a production-grade Visual-Inertial Odometry (VIO) stack, but mathematically projected down to a 2D world.
 
 By stripping away the Z-axis (and the headaches of 3D rotation groups, quaternions, and gimbal locks), we can explore the core algorithms of modern **SLAM**, **MSCKF**, **Factor Graphs**, and **Bundle Adjustment** in their purest, most understandable form.
 
