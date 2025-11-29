@@ -15,4 +15,8 @@ public:
 
     /// Update app logic and render frame
     void update();
+
+private:
+    /// Render the app's ImGui window
+    void render();
 };
