@@ -34,23 +34,12 @@ void App::render() {
    if (render_config() || _first_render) {
         _first_render = false;
         simulate();
+        estimate();
     }
 
-   const size_t NUM_STEPS = 100;
-   std::vector<Eigen::Vector2d> est_pos(NUM_STEPS);
-   std::vector<Eigen::Vector2d> gt_pos(NUM_STEPS);
-
-   gt_pos[0] = {0.0, 0.0};
-   est_pos[0] = {0.0, 0.0};
-   for (size_t i = 1; i < NUM_STEPS; i++) {
-       gt_pos[i] = gt_pos[i-1] + Eigen::Vector2d(1.0, 0.0);
-       est_pos[i] = gt_pos[i] + Eigen::Vector2d(0.0, 10.0);
-   }
-
-
    if (ImPlot::BeginPlot("Position")) {
-       plot_2d_path("Ground-truth", gt_pos, Color::Green());
-       plot_2d_path("Estimated", est_pos, Color::Red());
+       plot_2d_path("Ground-truth", _gt_pos, Color::Green());
+       plot_2d_path("Estimated", _est_pos, Color::Red());
        ImPlot::EndPlot();
    }
 }
@@ -76,9 +65,19 @@ bool App::render_config() {
 }
 
 void App::simulate() {
-    std::cout << "Simulate!\n";
+   _gt_pos.resize(_num_steps);
+   _est_pos.clear();
+
+   _gt_pos[0] = {0.0f, 0.0f};
+   for (size_t i = 1; i < _num_steps; i++) {
+       _gt_pos[i] = _gt_pos[i-1] + Eigen::Vector2f(1.0f, 0.0f);
+   }
 }
 
 void App::estimate() {
-
+   _est_pos.resize(_num_steps);
+   _est_pos[0] = {0.0f, 10.0f};
+   for (size_t i = 1; i < _num_steps; i++) {
+       _est_pos[i] = _gt_pos[i] + Eigen::Vector2f(0.0f, 10.0f);
+   }
 }

@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <Eigen/Dense>
+#include <vector>
+
 class App {
 public:
     App();
@@ -30,6 +33,8 @@ private:
     void estimate();
 
     bool _first_render = true;
+
+    //----- Simulation Configuration -----//
     int _num_steps = 100;
     int _num_landmarks = 10;
 
@@ -39,4 +44,10 @@ private:
     float _acc_noise_std = 0.01f;
     float _gyr_noise_std = 0.1f;
     float _cam_noise_std = 1.0f;
+
+    //----- Simulated data -----//
+    std::vector<Eigen::Vector2f> _gt_pos;
+
+    //----- Estimated data -----//
+    std::vector<Eigen::Vector2f> _est_pos;
 };
