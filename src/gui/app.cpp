@@ -7,6 +7,7 @@
 #include <cmath>
 #include <gui/app.hpp>
 #include <gui/plot.hpp>
+#include <map>
 
 App::App() {}
 
@@ -318,12 +319,14 @@ void App::update() {
 }
 
 void App::render() {
-    if (render_config() || _first_render) {
+    bool should_simulate = _first_render;
+    should_simulate |= render_config();
+    should_simulate |= render_world_editor();
+    if (should_simulate) {
         _first_render = false;
         simulate();
         estimate();
     }
-    render_world_editor();
     render_measurements();
     render_perception_output();
     render_error_metrics();
@@ -334,7 +337,118 @@ void App::simulate() {
     if (!_gt_pose_raw.empty()) {
         build_trajectory_from_raw_poses();
     }
+
+    // Clear previous simulation data
+    _gt_poses.clear();
+    _gt_vel.clear();
+    _gt_acc.clear();
+    _gt_omega.clear();
+    _gt_imu.clear();
+    _gt_cam.clear();
+    _imu_measurements.clear();
+    _cam_measurements.clear();
     _est_pos.clear();
+
+    if (!_gt_trajectory.is_valid())
+        return;
+
+    // Sample ground truth states from trajectory
+    size_t num_poses = _gt_trajectory.num_poses();
+    _gt_poses.reserve(num_poses);
+    _gt_vel.reserve(num_poses);
+    _gt_acc.reserve(num_poses);
+    _gt_omega.reserve(num_poses);
+
+    for (size_t i = 0; i < num_poses; i++) {
+        float t = static_cast<float>(i);
+        Eigen::Vector3f pose = _gt_trajectory.pose(t);
+        _gt_poses.push_back(pose);
+    }
+
+    // Compute velocities from finite differences
+    for (size_t i = 0; i < num_poses; i++) {
+        Eigen::Vector2f vel;
+        float omega;
+        if (i == 0) {
+            // Forward difference
+            vel = (_gt_poses[1].head<2>() - _gt_poses[0].head<2>()) / _dt;
+            omega = (_gt_poses[1].z() - _gt_poses[0].z()) / _dt;
+        } else if (i == num_poses - 1) {
+            // Backward difference
+            vel = (_gt_poses[i].head<2>() - _gt_poses[i - 1].head<2>()) / _dt;
+            omega = (_gt_poses[i].z() - _gt_poses[i - 1].z()) / _dt;
+        } else {
+            // Central difference
+            vel = (_gt_poses[i + 1].head<2>() - _gt_poses[i - 1].head<2>()) / (2.0f * _dt);
+            omega = (_gt_poses[i + 1].z() - _gt_poses[i - 1].z()) / (2.0f * _dt);
+        }
+        _gt_vel.push_back(vel);
+        _gt_omega.push_back(omega);
+    }
+
+    // Compute accelerations from finite differences of velocity
+    for (size_t i = 0; i < num_poses; i++) {
+        Eigen::Vector2f acc;
+        if (i == 0) {
+            acc = (_gt_vel[1] - _gt_vel[0]) / _dt;
+        } else if (i == num_poses - 1) {
+            acc = (_gt_vel[i] - _gt_vel[i - 1]) / _dt;
+        } else {
+            acc = (_gt_vel[i + 1] - _gt_vel[i - 1]) / (2.0f * _dt);
+        }
+        _gt_acc.push_back(acc);
+    }
+
+    // Generate sensor measurements
+    _gt_imu.reserve(num_poses);
+    _gt_cam.reserve(num_poses);
+    _imu_measurements.reserve(num_poses);
+    _cam_measurements.reserve(num_poses);
+
+    for (size_t i = 0; i < num_poses; i++) {
+        const Eigen::Vector3f& pose = _gt_poses[i];
+        Eigen::Vector2f pos(pose.x(), pose.y());
+        float theta = pose.z();
+
+        // IMU measurement
+        // The accelerometer measures specific force (acceleration - gravity) in body frame
+        // In body frame: a_body = R^T * (a_world - g)
+        // Note: gravity points down (-Y), but accelerometer measures reaction, so we add gravity
+        Eigen::Vector2f world_acc = _gt_acc[i];
+        Eigen::Vector2f specific_force = world_acc - _gravity; // Subtract gravity (which points down)
+
+        // Rotate to body frame
+        float cos_t = std::cos(theta);
+        float sin_t = std::sin(theta);
+        Eigen::Matrix2f R_wb; // World to body rotation
+        R_wb << cos_t, sin_t, -sin_t, cos_t;
+        Eigen::Vector2f body_acc = R_wb * specific_force;
+
+        float gt_gyr = _gt_omega[i];
+
+        // Store ground truth IMU (no noise, but with bias for comparison)
+        _gt_imu.push_back({body_acc, gt_gyr});
+        // Store noisy measurement
+        _imu_measurements.push_back(_imu.measure(body_acc, gt_gyr));
+
+        // Camera measurements (filter landmarks by wall occlusion)
+        std::vector<LandmarkObservation> gt_frame_obs;
+        std::vector<LandmarkObservation> noisy_frame_obs;
+        for (size_t j = 0; j < _landmarks.size(); j++) {
+            if (!is_landmark_occluded_by_walls(pos, _landmarks[j])) {
+                auto gt_u = _camera.project(pose, _landmarks[j]);
+                if (gt_u.has_value()) {
+                    gt_frame_obs.push_back({gt_u.value(), j});
+                    auto noisy_u = _camera.measure(pose, _landmarks[j]);
+                    if (noisy_u.has_value()) {
+                        noisy_frame_obs.push_back({noisy_u.value(), j});
+                    }
+                }
+            }
+        }
+        _gt_cam.push_back(gt_frame_obs);
+        _cam_measurements.push_back(noisy_frame_obs);
+    }
 }
 
 void App::build_trajectory_from_raw_poses() {
@@ -538,6 +652,15 @@ bool App::render_config() {
         ImGui::Indent();
         ImGui::PushItemWidth(100);
 
+        ImGui::Text("Simulation");
+        if (ImGui::DragFloat("Time step (s)", &_dt, 0.01f, 0.01f, 1.0f)) {
+            updated = true;
+        }
+        if (ImGui::DragFloat2("Gravity (m/s²)", _gravity.data(), 0.1f, -20.0f, 20.0f)) {
+            updated = true;
+        }
+        ImGui::Spacing();
+
         ImGui::Text("Camera Config");
         int cam_width = _camera.width();
         float cam_fov_deg = _camera.fov() * 180.0f / M_PI;
@@ -584,7 +707,8 @@ bool App::render_config() {
     return updated;
 }
 
-void App::render_world_editor() {
+bool App::render_world_editor() {
+    bool world_changed = false;
     static bool trajectory_drag_started = false;
     static ImVec2 trajectory_drag_start_pos;
     static bool landmark_click_started = false;
@@ -599,6 +723,7 @@ void App::render_world_editor() {
         ImGui::SetNextItemWidth(200);
         if (ImGui::Combo("World Preset", &current_preset_idx, preset_names, IM_ARRAYSIZE(preset_names))) {
             load_world_preset(static_cast<WorldPreset>(current_preset_idx));
+            world_changed = true;
         }
         ImGui::Separator();
 
@@ -608,6 +733,7 @@ void App::render_world_editor() {
             _gt_pose_raw.clear();
             _gt_trajectory = Trajectory2D();
             _current_preset = WorldPreset::Custom;
+            world_changed = true;
         }
 
         ImGui::TextWrapped("Right-click landmark: Delete");
@@ -615,6 +741,7 @@ void App::render_world_editor() {
         if (ImGui::Button("Clear all landmarks")) {
             _landmarks.clear();
             _current_preset = WorldPreset::Custom;
+            world_changed = true;
         }
 
         ImGui::TextWrapped("Shift+Drag: Draw wall");
@@ -623,6 +750,7 @@ void App::render_world_editor() {
             _walls.clear();
             _wall_raw_points.clear();
             _current_preset = WorldPreset::Custom;
+            world_changed = true;
         }
 
         // Disable plot panning when Ctrl or Shift is held (we're drawing)
@@ -694,17 +822,22 @@ void App::render_world_editor() {
                     if (dist < 5.0f) {
                         _landmarks.push_back(Eigen::Vector2f(mouse.x, mouse.y));
                         _current_preset = WorldPreset::Custom;
+                        world_changed = true;
                     }
                 }
             }
 
-            // Reset tracking on mouse release
+            // Reset tracking on mouse release and mark world as changed if we drew something
             if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+                if (trajectory_drag_started && !landmark_click_started && !_gt_pose_raw.empty()) {
+                    world_changed = true; // Trajectory was drawn
+                }
                 trajectory_drag_started = false;
                 landmark_click_started = false;
                 if (wall_drag_started) {
                     wall_drag_started = false;
                     _wall_raw_points.clear(); // Clear raw points after wall is finalized
+                    world_changed = true;     // Wall was drawn
                 }
             }
 
@@ -855,6 +988,7 @@ void App::render_world_editor() {
                 if (ImPlot::DragPoint(static_cast<int>(i), &x, &y, ImVec4(lm_color), 4.0f)) {
                     _landmarks[i] = Eigen::Vector2f(x, y);
                     _current_preset = WorldPreset::Custom;
+                    world_changed = true;
                 }
 
                 // Check if mouse is hovering this landmark for context menu
@@ -878,6 +1012,7 @@ void App::render_world_editor() {
             if (landmark_to_delete >= 0) {
                 _landmarks.erase(_landmarks.begin() + landmark_to_delete);
                 _current_preset = WorldPreset::Custom;
+                world_changed = true;
             }
 
             // Render walls (plain white)
@@ -923,16 +1058,212 @@ void App::render_world_editor() {
             if (wall_to_delete >= 0) {
                 _walls.erase(_walls.begin() + wall_to_delete);
                 _current_preset = WorldPreset::Custom;
+                world_changed = true;
             }
 
             ImPlot::EndPlot();
         }
     }
+    return world_changed;
 }
 
 void App::render_measurements() {
     if (ImGui::CollapsingHeader("Sensor Measurements")) {
-        ImGui::Text("TODO");
+        if (_imu_measurements.empty() || _cam_measurements.empty()) {
+            ImGui::Text("No measurements available. Draw a trajectory first.");
+            return;
+        }
+
+        size_t num_steps = _imu_measurements.size();
+
+        // Prepare time index axis
+        std::vector<float> time_axis(num_steps);
+        for (size_t i = 0; i < num_steps; i++) {
+            time_axis[i] = static_cast<float>(i);
+        }
+
+        // IMU Accelerometer plot
+        if (ImPlot::BeginPlot("IMU Accelerometer", ImVec2(-1, 200))) {
+            ImPlot::SetupAxes("Time Index", "Acceleration (m/s²)");
+
+            // Extract data
+            std::vector<float> gt_acc_x(num_steps), gt_acc_y(num_steps);
+            std::vector<float> meas_acc_x(num_steps), meas_acc_y(num_steps);
+            for (size_t i = 0; i < num_steps; i++) {
+                gt_acc_x[i] = _gt_imu[i].acc.x();
+                gt_acc_y[i] = _gt_imu[i].acc.y();
+                meas_acc_x[i] = _imu_measurements[i].acc.x();
+                meas_acc_y[i] = _imu_measurements[i].acc.y();
+            }
+
+            // Colors: measurement colors and faded ground truth
+            Color color_x = Color::Red();
+            Color color_y = Color::Blue();
+            Color gt_color_x = Color(0.25f * color_x.r() + 0.75f, 0.25f * color_x.g() + 0.75f, 0.25f * color_x.b() + 0.75f);
+            Color gt_color_y = Color(0.25f * color_y.r() + 0.75f, 0.25f * color_y.g() + 0.75f, 0.25f * color_y.b() + 0.75f);
+
+            // Plot ground truth (faded)
+            ImPlot::SetNextLineStyle(ImVec4(gt_color_x), 1.0f);
+            ImPlot::PlotLine("GT Acc X", time_axis.data(), gt_acc_x.data(), static_cast<int>(num_steps));
+            ImPlot::SetNextLineStyle(ImVec4(gt_color_y), 1.0f);
+            ImPlot::PlotLine("GT Acc Y", time_axis.data(), gt_acc_y.data(), static_cast<int>(num_steps));
+
+            // Plot measurements
+            ImPlot::SetNextLineStyle(ImVec4(color_x), 2.0f);
+            ImPlot::PlotLine("Acc X", time_axis.data(), meas_acc_x.data(), static_cast<int>(num_steps));
+            ImPlot::SetNextLineStyle(ImVec4(color_y), 2.0f);
+            ImPlot::PlotLine("Acc Y", time_axis.data(), meas_acc_y.data(), static_cast<int>(num_steps));
+
+            ImPlot::EndPlot();
+        }
+
+        // IMU Gyroscope plot
+        if (ImPlot::BeginPlot("IMU Gyroscope", ImVec2(-1, 200))) {
+            ImPlot::SetupAxes("Time Index", "Angular velocity (rad/s)");
+
+            // Extract data
+            std::vector<float> gt_gyr(num_steps), meas_gyr(num_steps);
+            for (size_t i = 0; i < num_steps; i++) {
+                gt_gyr[i] = _gt_imu[i].gyr;
+                meas_gyr[i] = _imu_measurements[i].gyr;
+            }
+
+            // Colors
+            Color color_gyr = Color::Green();
+            Color gt_color_gyr = Color(0.25f * color_gyr.r() + 0.75f, 0.25f * color_gyr.g() + 0.75f, 0.25f * color_gyr.b() + 0.75f);
+
+            // Plot ground truth (faded)
+            ImPlot::SetNextLineStyle(ImVec4(gt_color_gyr), 1.0f);
+            ImPlot::PlotLine("GT Gyro", time_axis.data(), gt_gyr.data(), static_cast<int>(num_steps));
+
+            // Plot measurements
+            ImPlot::SetNextLineStyle(ImVec4(color_gyr), 2.0f);
+            ImPlot::PlotLine("Gyro", time_axis.data(), meas_gyr.data(), static_cast<int>(num_steps));
+
+            ImPlot::EndPlot();
+        }
+
+        // Camera measurements plot (Time Index on X axis, Image u on Y axis)
+        if (ImPlot::BeginPlot("Camera Observations", ImVec2(-1, 300))) {
+            ImPlot::SetupAxes("Time Index", "Image u (px)");
+            ImPlot::SetupAxisLimits(ImAxis_X1, 0, static_cast<double>(num_steps));
+            ImPlot::SetupAxisLimits(ImAxis_Y1, 0, _camera.width());
+
+            // For each landmark, collect observations across time
+            // Store as (time_index, u) pairs, then split into consecutive segments
+            std::map<size_t, std::vector<std::pair<int, float>>> gt_tracks;
+            std::map<size_t, std::vector<std::pair<int, float>>> meas_tracks;
+
+            for (size_t t = 0; t < num_steps; t++) {
+                int time_idx = static_cast<int>(t);
+                for (const auto& obs : _gt_cam[t]) {
+                    gt_tracks[obs.landmark_id].push_back({time_idx, obs.u});
+                }
+                for (const auto& obs : _cam_measurements[t]) {
+                    meas_tracks[obs.landmark_id].push_back({time_idx, obs.u});
+                }
+            }
+
+            // Helper to split track into consecutive segments
+            auto split_into_segments = [](const std::vector<std::pair<int, float>>& track) {
+                std::vector<std::vector<std::pair<int, float>>> segments;
+                if (track.empty())
+                    return segments;
+
+                std::vector<std::pair<int, float>> current_segment;
+                current_segment.push_back(track[0]);
+
+                for (size_t i = 1; i < track.size(); i++) {
+                    if (track[i].first == track[i - 1].first + 1) {
+                        // Consecutive, add to current segment
+                        current_segment.push_back(track[i]);
+                    } else {
+                        // Gap detected, start new segment
+                        if (!current_segment.empty()) {
+                            segments.push_back(current_segment);
+                        }
+                        current_segment.clear();
+                        current_segment.push_back(track[i]);
+                    }
+                }
+                if (!current_segment.empty()) {
+                    segments.push_back(current_segment);
+                }
+                return segments;
+            };
+
+            // Draw tracks for each landmark
+            for (const auto& [lm_id, track] : meas_tracks) {
+                if (track.empty())
+                    continue;
+
+                Color lm_color = Color::Random(lm_id);
+                Color gt_lm_color = Color(0.25f * lm_color.r() + 0.75f, 0.25f * lm_color.g() + 0.75f, 0.25f * lm_color.b() + 0.75f);
+                std::string label = "LM " + std::to_string(lm_id);
+
+                // Get ground truth track for this landmark
+                const auto& gt_track = gt_tracks[lm_id];
+                auto gt_segments = split_into_segments(gt_track);
+                auto meas_segments = split_into_segments(track);
+
+                // Draw ground truth segments (faded lines)
+                for (size_t seg_idx = 0; seg_idx < gt_segments.size(); seg_idx++) {
+                    const auto& seg = gt_segments[seg_idx];
+                    if (seg.size() >= 2) {
+                        std::vector<float> seg_t, seg_u;
+                        for (const auto& [t, u] : seg) {
+                            seg_t.push_back(static_cast<float>(t));
+                            seg_u.push_back(u);
+                        }
+                        ImPlot::SetNextLineStyle(ImVec4(gt_lm_color), 1.0f);
+                        ImPlot::PlotLine(label.c_str(), seg_t.data(), seg_u.data(), static_cast<int>(seg_t.size()));
+                    }
+                }
+
+                // Draw ground truth scatter points
+                if (!gt_track.empty()) {
+                    std::vector<float> gt_t, gt_u;
+                    for (const auto& [t, u] : gt_track) {
+                        gt_t.push_back(static_cast<float>(t));
+                        gt_u.push_back(u);
+                    }
+                    ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 3.0f, ImVec4(gt_lm_color), IMPLOT_AUTO, ImVec4(gt_lm_color));
+                    ImPlot::PlotScatter(label.c_str(), gt_t.data(), gt_u.data(), static_cast<int>(gt_t.size()));
+                }
+
+                // Draw measurement segments (lines)
+                for (size_t seg_idx = 0; seg_idx < meas_segments.size(); seg_idx++) {
+                    const auto& seg = meas_segments[seg_idx];
+                    if (seg.size() >= 2) {
+                        std::vector<float> seg_t, seg_u;
+                        for (const auto& [t, u] : seg) {
+                            seg_t.push_back(static_cast<float>(t));
+                            seg_u.push_back(u);
+                        }
+                        ImPlot::SetNextLineStyle(ImVec4(lm_color), 2.0f);
+                        // Only use visible label for first segment
+                        if (seg_idx == 0) {
+                            ImPlot::PlotLine(label.c_str(), seg_t.data(), seg_u.data(), static_cast<int>(seg_t.size()));
+                        } else {
+                            ImPlot::PlotLine(label.c_str(), seg_t.data(), seg_u.data(), static_cast<int>(seg_t.size()));
+                        }
+                    }
+                }
+
+                // Draw measurement scatter points
+                if (!track.empty()) {
+                    std::vector<float> meas_t, meas_u;
+                    for (const auto& [t, u] : track) {
+                        meas_t.push_back(static_cast<float>(t));
+                        meas_u.push_back(u);
+                    }
+                    ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 4.0f, ImVec4(lm_color), IMPLOT_AUTO, ImVec4(lm_color));
+                    ImPlot::PlotScatter(label.c_str(), meas_t.data(), meas_u.data(), static_cast<int>(meas_t.size()));
+                }
+            }
+
+            ImPlot::EndPlot();
+        }
     }
 }
 

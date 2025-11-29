@@ -32,8 +32,8 @@ class App {
     /// Render config header to setup simulation parameters. Returns true if the config changed.
     bool render_config();
 
-    /// Render world editor for drawing trajectory and placing landmarks
-    void render_world_editor();
+    /// Render world editor for drawing trajectory and placing landmarks. Returns true if world changed.
+    bool render_world_editor();
 
     /// Render sensor measurements
     void render_measurements();
@@ -67,41 +67,48 @@ class App {
 
     bool _first_render = true;
 
-    //----- World Preset -----//
-    WorldPreset _current_preset = WorldPreset::Custom;
-
-    //----- Simulation Configuration -----//
+    //----- Sensor models -----//
     // Camera model
     Camera2D _camera;
 
     // IMU model
     IMU2D _imu;
 
-    //----- Simulated data -----//
+    //----- Simulation parameters -----//
+    float _dt = 1.0f;                                         ///< Time step between poses (seconds)
+    Eigen::Vector2f _gravity = Eigen::Vector2f(0.0f, -9.81f); ///< World gravity vector (m/s²)
+
+    //----- World & ground-truth states -----//
+    WorldPreset _current_preset = WorldPreset::Custom;
+
+    // Trajectory
     std::vector<Eigen::Vector3f> _gt_pose_raw; ///< Raw poses from mouse input (x, y, orientation)
     Trajectory2D _gt_trajectory;               ///< Smoothed ground truth trajectory
+
+    // Ground truth states at each time step (sampled from trajectory)
+    std::vector<Eigen::Vector3f> _gt_poses; ///< Ground truth poses (x, y, theta)
+    std::vector<Eigen::Vector2f> _gt_vel;   ///< Ground truth velocities (vx, vy)
+    std::vector<Eigen::Vector2f> _gt_acc;   ///< Ground truth accelerations (ax, ay)
+    std::vector<float> _gt_omega;           ///< Ground truth angular velocities
+
+    // Landmarks
     std::vector<Eigen::Vector2f> _landmarks;
 
-    // Wall data
+    // Walls
     struct Wall {
         std::vector<Eigen::Vector2f> points; ///< Line segment points forming the wall
     };
     std::vector<Wall> _walls;
     std::vector<Eigen::Vector2f> _wall_raw_points; ///< Raw points while drawing a wall
 
-    // For simplicity, all measurements are available at each time step
-    // IMU measurements
-    std::vector<Eigen::Vector2f> _imu_acc;
-    std::vector<float> _imu_gyr;
-    // Camera measurements
-    struct Observation {
-        Eigen::Vector2f uv;
-        size_t landmark_id;
-    };
-    struct Frame {
-        std::vector<Observation> observations;
-    };
-    std::vector<Frame> _cam_frames;
+    //----- Simulated measurements -----//
+    // IMU measurements (one per time step)
+    std::vector<IMUMeasurement> _gt_imu; ///< Ground truth IMU (no noise, with bias)
+    std::vector<IMUMeasurement> _imu_measurements;
+
+    // Camera measurements (one frame per time step)
+    std::vector<std::vector<LandmarkObservation>> _gt_cam; ///< Ground truth camera (no noise)
+    std::vector<std::vector<LandmarkObservation>> _cam_measurements;
 
     //----- Estimated data -----//
     std::vector<Eigen::Vector2f> _est_pos;
