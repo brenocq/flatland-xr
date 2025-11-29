@@ -4,6 +4,7 @@
 #include "imgui.h"
 #include "implot.h"
 
+#include <cmath>
 #include <gui/app.hpp>
 #include <gui/plot.hpp>
 
@@ -40,23 +41,93 @@ void App::render() {
 }
 
 void App::simulate() {
-    _gt_pose.resize(_num_steps);
-    _est_pos.clear();
-
-    _gt_pose[0] = {0.0f, 0.0f, 0.0f};
-    for (size_t i = 1; i < _num_steps; i++) {
-        Eigen::Vector2f prev(_gt_pose[i - 1].x(), _gt_pose[i - 1].y());
-        Eigen::Vector2f curr = prev + Eigen::Vector2f(1.0f, 0.0f);
-        float orientation = std::atan2(curr.y() - prev.y(), curr.x() - prev.x());
-        _gt_pose[i] = Eigen::Vector3f(curr.x(), curr.y(), orientation);
+    // Build trajectory from raw poses if available
+    if (!_gt_pose_raw.empty()) {
+        build_trajectory_from_raw_poses();
     }
+    _est_pos.clear();
+}
+
+void App::build_trajectory_from_raw_poses() {
+    if (_gt_pose_raw.size() < 4) {
+        _gt_trajectory = Trajectory2D();
+        return;
+    }
+
+    // Smooth poses using a simple moving average filter
+    std::vector<Eigen::Vector3f> smoothed_poses;
+    smoothed_poses.reserve(_gt_pose_raw.size());
+
+    const int window = 3; // Smoothing window half-size
+    for (size_t i = 0; i < _gt_pose_raw.size(); i++) {
+        float sum_x = 0, sum_y = 0;
+        int count = 0;
+
+        for (int j = -window; j <= window; j++) {
+            int idx = static_cast<int>(i) + j;
+            if (idx >= 0 && idx < static_cast<int>(_gt_pose_raw.size())) {
+                sum_x += _gt_pose_raw[idx].x();
+                sum_y += _gt_pose_raw[idx].y();
+                count++;
+            }
+        }
+
+        float avg_x = sum_x / count;
+        float avg_y = sum_y / count;
+
+        // Compute orientation from smoothed positions
+        float orientation = 0.0f;
+        if (i > 0) {
+            float dx = avg_x - smoothed_poses.back().x();
+            float dy = avg_y - smoothed_poses.back().y();
+            if (dx != 0 || dy != 0) {
+                orientation = std::atan2(dy, dx);
+            } else {
+                orientation = smoothed_poses.back().z();
+            }
+        }
+
+        smoothed_poses.push_back(Eigen::Vector3f(avg_x, avg_y, orientation));
+    }
+
+    // Subsample to reduce number of poses (keep roughly every Nth pose)
+    std::vector<Eigen::Vector3f> subsampled;
+    const size_t target_poses = std::min(smoothed_poses.size(), static_cast<size_t>(100));
+    size_t step = std::max(static_cast<size_t>(1), smoothed_poses.size() / target_poses);
+
+    for (size_t i = 0; i < smoothed_poses.size(); i += step) {
+        subsampled.push_back(smoothed_poses[i]);
+    }
+    // Always include the last pose
+    if (subsampled.back().x() != smoothed_poses.back().x() || subsampled.back().y() != smoothed_poses.back().y()) {
+        subsampled.push_back(smoothed_poses.back());
+    }
+
+    // Recompute orientations after subsampling
+    for (size_t i = 1; i < subsampled.size(); i++) {
+        float dx = subsampled[i].x() - subsampled[i - 1].x();
+        float dy = subsampled[i].y() - subsampled[i - 1].y();
+        if (dx != 0 || dy != 0) {
+            subsampled[i].z() = std::atan2(dy, dx);
+        }
+    }
+    if (subsampled.size() > 1) {
+        subsampled[0].z() = subsampled[1].z();
+    }
+
+    _gt_trajectory.build(subsampled);
 }
 
 void App::estimate() {
-    _est_pos.resize(_num_steps);
-    _est_pos[0] = {0.0f, 10.0f};
-    for (size_t i = 1; i < _num_steps; i++) {
-        _est_pos[i] = Eigen::Vector2f(_gt_pose[i].x(), _gt_pose[i].y()) + Eigen::Vector2f(0.0f, 10.0f);
+    _est_pos.clear();
+    if (!_gt_trajectory.is_valid())
+        return;
+
+    size_t num_poses = _gt_trajectory.num_poses();
+    _est_pos.resize(num_poses);
+    for (size_t i = 0; i < num_poses; i++) {
+        Eigen::Vector2f pos = _gt_trajectory.position(static_cast<float>(i));
+        _est_pos[i] = pos + Eigen::Vector2f(0.0f, 10.0f);
     }
 }
 
@@ -96,8 +167,10 @@ void App::render_world_editor() {
     if (ImGui::CollapsingHeader("World Editor", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::TextWrapped("Ctrl+Click: Add new landmark | Ctrl+Drag: Draw trajectory");
         ImGui::SameLine();
-        if (ImGui::Button("Clear trajectory"))
-            _gt_pose.clear();
+        if (ImGui::Button("Clear trajectory")) {
+            _gt_pose_raw.clear();
+            _gt_trajectory = Trajectory2D();
+        }
 
         ImGui::TextWrapped("Right-click landmark: Delete");
         ImGui::SameLine();
@@ -129,13 +202,14 @@ void App::render_world_editor() {
                     if (drag_dist > 5.0f) {
                         // Clear trajectory on first drag movement
                         if (landmark_click_started) {
-                            _gt_pose.clear();
+                            _gt_pose_raw.clear();
+                            _gt_trajectory = Trajectory2D();
                             landmark_click_started = false;
                         }
 
                         bool should_add = true;
-                        if (!_gt_pose.empty()) {
-                            ImPlotPoint last_plot(_gt_pose.back().x(), _gt_pose.back().y());
+                        if (!_gt_pose_raw.empty()) {
+                            ImPlotPoint last_plot(_gt_pose_raw.back().x(), _gt_pose_raw.back().y());
                             ImVec2 last_px = ImPlot::PlotToPixels(last_plot);
                             ImVec2 mouse_px = ImPlot::PlotToPixels(mouse);
                             float dist = std::sqrt(std::pow(mouse_px.x - last_px.x, 2) + std::pow(mouse_px.y - last_px.y, 2));
@@ -144,13 +218,15 @@ void App::render_world_editor() {
                         if (should_add) {
                             // Compute orientation from previous pose
                             float orientation = 0.0f;
-                            if (!_gt_pose.empty()) {
-                                Eigen::Vector2f prev(_gt_pose.back().x(), _gt_pose.back().y());
+                            if (!_gt_pose_raw.empty()) {
+                                Eigen::Vector2f prev(_gt_pose_raw.back().x(), _gt_pose_raw.back().y());
                                 Eigen::Vector2f curr(mouse.x, mouse.y);
                                 Eigen::Vector2f dir = curr - prev;
                                 orientation = std::atan2(dir.y(), dir.x());
                             }
-                            _gt_pose.push_back(Eigen::Vector3f(mouse.x, mouse.y, orientation));
+                            _gt_pose_raw.push_back(Eigen::Vector3f(mouse.x, mouse.y, orientation));
+                            // Rebuild trajectory while drawing for live preview
+                            build_trajectory_from_raw_poses();
                         }
                     }
                 }
@@ -188,33 +264,49 @@ void App::render_world_editor() {
                 }
             }
 
-            for (size_t i = 0; i < _gt_pose.size(); i++) {
-                ImVec2 gt_px = ImPlot::PlotToPixels(ImPlotPoint(_gt_pose[i].x(), _gt_pose[i].y()));
-                float dist = std::sqrt(std::pow(mouse_px.x - gt_px.x, 2) + std::pow(mouse_px.y - gt_px.y, 2));
-                if (dist < closest_dist) {
-                    closest_dist = dist;
-                    closest_gt = static_cast<int>(i);
-                    closest_landmark = -1;
+            // Check proximity to trajectory poses
+            if (_gt_trajectory.is_valid()) {
+                for (size_t i = 0; i < _gt_trajectory.num_poses(); i++) {
+                    Eigen::Vector2f pos = _gt_trajectory.position(static_cast<float>(i));
+                    ImVec2 gt_px = ImPlot::PlotToPixels(ImPlotPoint(pos.x(), pos.y()));
+                    float dist = std::sqrt(std::pow(mouse_px.x - gt_px.x, 2) + std::pow(mouse_px.y - gt_px.y, 2));
+                    if (dist < closest_dist) {
+                        closest_dist = dist;
+                        closest_gt = static_cast<int>(i);
+                        closest_landmark = -1;
+                    }
                 }
             }
 
-            // Render trajectory using plot_2d_poses
-            if (!_gt_pose.empty()) {
-                plot_2d_poses("Trajectory", _gt_pose, Color::Green());
+            // Render trajectory
+            if (_gt_trajectory.is_valid()) {
+                plot_2d_trajectory("Trajectory", _gt_trajectory, Color::Green());
             }
 
-            // Show tooltip for closest point and camera preview for poses
-            if (closest_landmark >= 0) {
-                ImGui::SetTooltip("Landmark %d\nPos: (%.2f, %.2f)", closest_landmark, _landmarks[closest_landmark].x(),
-                                  _landmarks[closest_landmark].y());
-            } else if (closest_gt >= 0) {
-                ImGui::SetTooltip("GT Pose %d\nPos: (%.2f, %.2f)\nOrientation: %.2f°", closest_gt, _gt_pose[closest_gt].x(), _gt_pose[closest_gt].y(),
-                                  _gt_pose[closest_gt].z() * 180.0f / M_PI);
-                // Draw camera frustum at hovered pose
-                Eigen::Vector2f pos(_gt_pose[closest_gt].x(), _gt_pose[closest_gt].y());
-                float orientation = _gt_pose[closest_gt].z();
+            // While drawing, show camera at last pose; otherwise show tooltip for closest point
+            bool is_drawing = trajectory_drag_started && !landmark_click_started;
+            if (is_drawing && _gt_trajectory.is_valid()) {
+                // Show camera at last pose while drawing
+                float last_t = _gt_trajectory.max_t();
+                Eigen::Vector3f pose = _gt_trajectory.pose(last_t);
+                Eigen::Vector2f pos(pose.x(), pose.y());
+                float orientation = pose.z();
                 float fov_rad = _cam_fov * M_PI / 180.0f;
-                plot_2d_camera("##HoverCamera", pos, orientation, fov_rad, 1.0f, Color::Red());
+                plot_2d_camera("##DrawingCamera", pos, orientation, fov_rad, 1.0f, Color::Red());
+            } else {
+                // Show tooltip for closest point and camera preview for poses
+                if (closest_landmark >= 0) {
+                    ImGui::SetTooltip("Landmark %d\nPos: (%.2f, %.2f)", closest_landmark, _landmarks[closest_landmark].x(),
+                                      _landmarks[closest_landmark].y());
+                } else if (closest_gt >= 0 && _gt_trajectory.is_valid()) {
+                    Eigen::Vector3f pose = _gt_trajectory.pose(static_cast<float>(closest_gt));
+                    ImGui::SetTooltip("GT Pose %d\nPos: (%.2f, %.2f)\nOrientation: %.2f°", closest_gt, pose.x(), pose.y(), pose.z() * 180.0f / M_PI);
+                    // Draw camera frustum at hovered pose
+                    Eigen::Vector2f pos(pose.x(), pose.y());
+                    float orientation = pose.z();
+                    float fov_rad = _cam_fov * M_PI / 180.0f;
+                    plot_2d_camera("##HoverCamera", pos, orientation, fov_rad, 1.0f, Color::Red());
+                }
             }
 
             // Render landmarks as draggable points with context menu
@@ -262,7 +354,9 @@ void App::render_measurements() {
 void App::render_perception_output() {
     if (ImGui::CollapsingHeader("Perception Output", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImPlot::BeginPlot("Position")) {
-            plot_2d_poses("Ground-truth", _gt_pose, Color::Green());
+            if (_gt_trajectory.is_valid()) {
+                plot_2d_trajectory("Ground-truth", _gt_trajectory, Color::Green());
+            }
             plot_2d_path("Estimated", _est_pos, Color::Red());
             ImPlot::EndPlot();
         }

@@ -74,6 +74,7 @@ target_link_libraries(implot PUBLIC imgui)
 set(exe_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(EXE_SOURCE
     ${exe_SOURCE_DIR}/main.cpp
+    ${exe_SOURCE_DIR}/trajectory2d.cpp
     # GUI
     ${exe_SOURCE_DIR}/gui/app.cpp
     ${exe_SOURCE_DIR}/gui/color.cpp

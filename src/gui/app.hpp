@@ -4,6 +4,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <trajectory2d.hpp>
 #include <vector>
 
 class App {
@@ -38,6 +39,9 @@ class App {
     /// Render error metrics
     void render_error_metrics();
 
+    /// Smooth raw poses and build trajectory
+    void build_trajectory_from_raw_poses();
+
     /// Simulate the sensor measurements
     void simulate();
 
@@ -60,7 +64,8 @@ class App {
     float _gyr_noise_std = 0.1f;
 
     //----- Simulated data -----//
-    std::vector<Eigen::Vector3f> _gt_pose; ///< Ground truth poses (x, y, orientation)
+    std::vector<Eigen::Vector3f> _gt_pose_raw; ///< Raw poses from mouse input (x, y, orientation)
+    Trajectory2D _gt_trajectory;               ///< Smoothed ground truth trajectory
     std::vector<Eigen::Vector2f> _landmarks;
 
     // For simplicity, all measurements are available at each time step

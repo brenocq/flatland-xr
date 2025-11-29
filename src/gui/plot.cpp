@@ -2,7 +2,9 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include "implot.h"
+#include <cmath>
 #include <gui/plot.hpp>
+#include <trajectory2d.hpp>
 
 void plot_2d_path(const std::string& label, const std::vector<Eigen::Vector2f>& positions, const Color& color, float weight) {
     plot_2d_line(label, positions, color, weight);
@@ -24,7 +26,8 @@ void plot_2d_scatter(const std::string& label, const std::vector<Eigen::Vector2f
     ImPlot::PlotScatter(label.c_str(), &positions[0].x(), &positions[0].y(), positions.size(), ImPlotScatterFlags_None, 0, sizeof(Eigen::Vector2f));
 }
 
-void plot_2d_camera(const std::string& label, const Eigen::Vector2f& position, float orientation, float fov, float focal_length, const Color& color, float weight) {
+void plot_2d_camera(const std::string& label, const Eigen::Vector2f& position, float orientation, float fov, float focal_length, const Color& color,
+                    float weight) {
     // Calculate the image plane corners
     float half_fov = fov / 2.0f;
     float half_width = focal_length * std::tan(half_fov);
@@ -60,4 +63,51 @@ void plot_2d_poses(const std::string& label, const std::vector<Eigen::Vector3f>&
 
     plot_2d_line(label, positions, color, weight);
     plot_2d_scatter("##" + label + "_scatter", positions, color, scatter_size);
+}
+
+void plot_2d_trajectory(const std::string& label, const Trajectory2D& trajectory, const Color& color, float weight, float scatter_size) {
+    if (!trajectory.is_valid())
+        return;
+
+    float max_t = trajectory.max_t();
+    if (max_t <= 0)
+        return;
+
+    // Estimate arc length in pixels by sampling coarsely
+    const int coarse_samples = 20;
+    float total_px_length = 0.0f;
+    ImVec2 prev_px = ImPlot::PlotToPixels(ImPlotPoint(trajectory.position(0).x(), trajectory.position(0).y()));
+
+    for (int i = 1; i <= coarse_samples; i++) {
+        float t = max_t * static_cast<float>(i) / static_cast<float>(coarse_samples);
+        Eigen::Vector2f pos = trajectory.position(t);
+        ImVec2 curr_px = ImPlot::PlotToPixels(ImPlotPoint(pos.x(), pos.y()));
+        total_px_length += std::sqrt(std::pow(curr_px.x - prev_px.x, 2) + std::pow(curr_px.y - prev_px.y, 2));
+        prev_px = curr_px;
+    }
+
+    // Use approximately 1 sample per 2 pixels, with reasonable bounds
+    int num_samples = static_cast<int>(total_px_length / 2.0f);
+    num_samples = std::max(static_cast<int>(trajectory.num_poses()), std::min(num_samples, 2000));
+
+    // Sample the trajectory uniformly
+    std::vector<Eigen::Vector2f> sampled_positions;
+    sampled_positions.reserve(num_samples);
+
+    for (int i = 0; i < num_samples; i++) {
+        float t = max_t * static_cast<float>(i) / static_cast<float>(num_samples - 1);
+        sampled_positions.push_back(trajectory.position(t));
+    }
+
+    plot_2d_line(label, sampled_positions, color, weight);
+
+    // Plot scatter at integer t values (original poses)
+    std::vector<Eigen::Vector2f> pose_positions;
+    pose_positions.reserve(trajectory.num_poses());
+
+    for (size_t i = 0; i < trajectory.num_poses(); i++) {
+        pose_positions.push_back(trajectory.position(static_cast<float>(i)));
+    }
+
+    plot_2d_scatter("##" + label + "_poses", pose_positions, color, scatter_size);
 }
