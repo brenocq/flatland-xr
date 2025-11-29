@@ -19,7 +19,7 @@ void App::update() {
     ImGuiID dockId = ImGui::GetID("##DockSpace");
     ImGui::DockSpaceOverViewport(dockId, ImGui::GetMainViewport());
     ImGui::SetNextWindowDockID(dockId, ImGuiCond_Appearing);
-    if (ImGui::Begin("MSCKF Playground")) {
+    if (ImGui::Begin("Lineland XR")) {
         render();
     }
     ImGui::End();
@@ -34,13 +34,26 @@ void App::render() {
         simulate();
         estimate();
     }
+    render_measurements();
+    render_perception_output();
+    render_error_metrics();
+}
 
-    if (ImGui::CollapsingHeader("Output", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if (ImPlot::BeginPlot("Position")) {
-            plot_2d_path("Ground-truth", _gt_pos, Color::Green());
-            plot_2d_path("Estimated", _est_pos, Color::Red());
-            ImPlot::EndPlot();
-        }
+void App::simulate() {
+    _gt_pos.resize(_num_steps);
+    _est_pos.clear();
+
+    _gt_pos[0] = {0.0f, 0.0f};
+    for (size_t i = 1; i < _num_steps; i++) {
+        _gt_pos[i] = _gt_pos[i - 1] + Eigen::Vector2f(1.0f, 0.0f);
+    }
+}
+
+void App::estimate() {
+    _est_pos.resize(_num_steps);
+    _est_pos[0] = {0.0f, 10.0f};
+    for (size_t i = 1; i < _num_steps; i++) {
+        _est_pos[i] = _gt_pos[i] + Eigen::Vector2f(0.0f, 10.0f);
     }
 }
 
@@ -71,20 +84,24 @@ bool App::render_config() {
     return updated;
 }
 
-void App::simulate() {
-    _gt_pos.resize(_num_steps);
-    _est_pos.clear();
-
-    _gt_pos[0] = {0.0f, 0.0f};
-    for (size_t i = 1; i < _num_steps; i++) {
-        _gt_pos[i] = _gt_pos[i - 1] + Eigen::Vector2f(1.0f, 0.0f);
+void App::render_measurements() {
+    if (ImGui::CollapsingHeader("Sensor Measurements")) {
+        ImGui::Text("TODO");
     }
 }
 
-void App::estimate() {
-    _est_pos.resize(_num_steps);
-    _est_pos[0] = {0.0f, 10.0f};
-    for (size_t i = 1; i < _num_steps; i++) {
-        _est_pos[i] = _gt_pos[i] + Eigen::Vector2f(0.0f, 10.0f);
+void App::render_perception_output() {
+    if (ImGui::CollapsingHeader("Perception Output", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImPlot::BeginPlot("Position")) {
+            plot_2d_path("Ground-truth", _gt_pos, Color::Green());
+            plot_2d_path("Estimated", _est_pos, Color::Red());
+            ImPlot::EndPlot();
+        }
+    }
+}
+
+void App::render_error_metrics() {
+    if (ImGui::CollapsingHeader("Error Metrics")) {
+        ImGui::Text("TODO");
     }
 }

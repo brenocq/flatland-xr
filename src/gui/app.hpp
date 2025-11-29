@@ -26,6 +26,15 @@ class App {
     /// Render config header to setup simulation parameters. Returns true if the config changed.
     bool render_config();
 
+    /// Render sensor measurements
+    void render_measurements();
+
+    /// Render perception output
+    void render_perception_output();
+
+    /// Render error metrics
+    void render_error_metrics();
+
     /// Simulate the sensor measurements
     void simulate();
 
