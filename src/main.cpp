@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
-// MSCKF Playground
-
 #include <gui/app.hpp>
 #include <gui/window.hpp>
 
 int main() {
-    Window window("MSCKF Playground", 1200, 800);
+    Window window("Flatland XR", 1200, 800);
     App app;
 
     // Setup

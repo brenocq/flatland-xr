@@ -19,7 +19,7 @@ void App::update() {
     ImGuiID dockId = ImGui::GetID("##DockSpace");
     ImGui::DockSpaceOverViewport(dockId, ImGui::GetMainViewport());
     ImGui::SetNextWindowDockID(dockId, ImGuiCond_Appearing);
-    if (ImGui::Begin("Lineland XR")) {
+    if (ImGui::Begin("Flatland XR")) {
         render();
     }
     ImGui::End();

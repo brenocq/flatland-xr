@@ -26,8 +26,8 @@ def png_to_base64(filename):
 
 def main():
     # --- CONFIGURATION ---
-    input_filename = "lineland-emoji.png"
-    output_filename = "animated-lineland-emoji.svg"
+    input_filename = "flatland-emoji.png"
+    output_filename = "animated-flatland-emoji.svg"
 
     # Canvas size
     Size = 150

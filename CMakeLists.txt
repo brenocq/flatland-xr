@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(lineland-xr LANGUAGES CXX C)
+project(flatland-xr LANGUAGES CXX C)
 
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -82,11 +82,11 @@ set(EXE_SOURCE
     ${exe_SOURCE_DIR}/gui/plot.cpp
     ${exe_SOURCE_DIR}/gui/window.cpp
 )
-add_executable(lineland-xr ${EXE_SOURCE})
-target_include_directories(lineland-xr PRIVATE ${exe_SOURCE_DIR} ${eigen_SOURCE_DIR})
-target_link_libraries(lineland-xr PRIVATE implot Eigen3::Eigen)
+add_executable(flatland-xr ${EXE_SOURCE})
+target_include_directories(flatland-xr PRIVATE ${exe_SOURCE_DIR} ${eigen_SOURCE_DIR})
+target_link_libraries(flatland-xr PRIVATE implot Eigen3::Eigen)
 
 # Silence OpenGL deprecation warnings on macOS
 if(APPLE)
-    target_compile_definitions(lineland-xr PRIVATE GL_SILENCE_DEPRECATION)
+    target_compile_definitions(flatland-xr PRIVATE GL_SILENCE_DEPRECATION)
 endif()
