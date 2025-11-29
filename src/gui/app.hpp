@@ -47,6 +47,21 @@ private:
 
     //----- Simulated data -----//
     std::vector<Eigen::Vector2f> _gt_pos;
+    std::vector<Eigen::Vector2f> _landmarks;
+
+    // For simplicity, all measurements are available at each time step
+    // IMU measurements
+    std::vector<Eigen::Vector2f> _imu_acc;
+    std::vector<float> _imu_gyr;
+    // Camera measurements
+    struct Observation {
+        Eigen::Vector2f uv;
+        size_t landmark_id;
+    };
+    struct Frame {
+        std::vector<Observation> observations;
+    };
+    std::vector<Frame> _cam_frames;
 
     //----- Estimated data -----//
     std::vector<Eigen::Vector2f> _est_pos;
