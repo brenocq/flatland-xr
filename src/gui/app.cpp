@@ -299,9 +299,9 @@ void App::render_world_editor() {
                 Eigen::Vector3f pose = _gt_trajectory.pose(last_t);
                 Eigen::Vector2f pos(pose.x(), pose.y());
                 auto observations = _camera.project_landmarks(pose, _landmarks);
-                plot_2d_camera_frustum("##DrawingCamera", pos, pose.z(), _camera.fov(), 1.0f, Color::Red());
-                plot_2d_camera_rays("##DrawingRays", pos, _landmarks, observations, Color::Yellow(), 1.0f);
-                plot_2d_camera_observations("##DrawingObs", pos, pose.z(), _camera, observations, Color::Yellow());
+                plot_2d_camera_frustum("##DrawingCamera", pos, pose.z(), _camera.fov(), 1.0f, Color::Blue());
+                plot_2d_camera_rays("##DrawingRays", pos, _landmarks, observations, 1.0f);
+                plot_2d_camera_observations("##DrawingObs", pos, pose.z(), _camera, observations);
             } else {
                 // Show tooltip for closest point and camera preview for poses
                 if (closest_landmark >= 0) {
@@ -313,9 +313,9 @@ void App::render_world_editor() {
                     // Draw camera frustum with projected landmarks
                     Eigen::Vector2f pos(pose.x(), pose.y());
                     auto observations = _camera.project_landmarks(pose, _landmarks);
-                    plot_2d_camera_frustum("##HoverCamera", pos, pose.z(), _camera.fov(), 1.0f, Color::Red());
-                    plot_2d_camera_rays("##HoverRays", pos, _landmarks, observations, Color::Yellow(), 1.0f);
-                    plot_2d_camera_observations("##HoverObs", pos, pose.z(), _camera, observations, Color::Yellow());
+                    plot_2d_camera_frustum("##HoverCamera", pos, pose.z(), _camera.fov(), 1.0f, Color::Blue());
+                    plot_2d_camera_rays("##HoverRays", pos, _landmarks, observations, 1.0f);
+                    plot_2d_camera_observations("##HoverObs", pos, pose.z(), _camera, observations);
                 }
             }
 
@@ -324,7 +324,8 @@ void App::render_world_editor() {
             for (size_t i = 0; i < _landmarks.size(); i++) {
                 double x = _landmarks[i].x();
                 double y = _landmarks[i].y();
-                if (ImPlot::DragPoint(static_cast<int>(i), &x, &y, ImVec4(1, 0.5f, 0, 1), 4.0f)) {
+                Color lm_color = Color::Random(i);
+                if (ImPlot::DragPoint(static_cast<int>(i), &x, &y, ImVec4(lm_color), 4.0f)) {
                     _landmarks[i] = Eigen::Vector2f(x, y);
                 }
 

@@ -114,7 +114,7 @@ void plot_2d_trajectory(const std::string& label, const Trajectory2D& trajectory
 }
 
 void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f& position, float orientation, const Camera2D& camera,
-                                 const std::vector<LandmarkObservation>& observations, const Color& color) {
+                                 const std::vector<LandmarkObservation>& observations) {
     if (observations.empty())
         return;
 
@@ -133,31 +133,25 @@ void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f
     Eigen::Vector2f left_corner = plane_center - right * half_width;
     Eigen::Vector2f right_corner = plane_center + right * half_width;
 
-    // Draw observations as points on the image plane
-    std::vector<Eigen::Vector2f> obs_points;
-    obs_points.reserve(observations.size());
-
+    // Draw each observation with its landmark color
     for (const auto& obs : observations) {
-        // Convert pixel u to position on image plane
-        // u = 0 -> left_corner, u = width -> right_corner
         float t = obs.u / static_cast<float>(camera.width());
         Eigen::Vector2f point = left_corner + (right_corner - left_corner) * t;
-        obs_points.push_back(point);
-    }
 
-    ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 2.0f, ImVec4(color), IMPLOT_AUTO, ImVec4(color));
-    ImPlot::PlotScatter(label.c_str(), &obs_points[0].x(), &obs_points[0].y(), obs_points.size(), ImPlotScatterFlags_None, 0,
-                        sizeof(Eigen::Vector2f));
+        Color color = Color::Random(obs.landmark_id);
+        ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 4.0f, ImVec4(color), IMPLOT_AUTO, ImVec4(color));
+        ImPlot::PlotScatter(label.c_str(), &point.x(), &point.y(), 1, ImPlotScatterFlags_None, 0, sizeof(Eigen::Vector2f));
+    }
 }
 
 void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& position, const std::vector<Eigen::Vector2f>& landmarks,
-                         const std::vector<LandmarkObservation>& observations, const Color& color, float weight) {
+                         const std::vector<LandmarkObservation>& observations, float weight) {
     if (observations.empty())
         return;
 
-    for (size_t i = 0; i < observations.size(); i++) {
-        const auto& obs = observations[i];
+    for (const auto& obs : observations) {
         const Eigen::Vector2f& landmark = landmarks[obs.landmark_id];
+        Color color = Color::Random(obs.landmark_id);
 
         std::vector<Eigen::Vector2f> ray = {position, landmark};
         ImPlot::SetNextLineStyle(ImVec4(color), weight);

@@ -23,10 +23,10 @@ void plot_2d_trajectory(const std::string& label, const Trajectory2D& trajectory
 struct LandmarkObservation;
 class Camera2D;
 
-/// Plot landmark observations as points on the camera image plane
+/// Plot landmark observations as points on the camera image plane (colored by landmark ID)
 void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f& position, float orientation, const Camera2D& camera,
-                                 const std::vector<LandmarkObservation>& observations, const Color& color = Color::Auto());
+                                 const std::vector<LandmarkObservation>& observations);
 
-/// Plot rays from camera center to observed landmarks
+/// Plot rays from camera center to observed landmarks (colored by landmark ID)
 void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& position, const std::vector<Eigen::Vector2f>& landmarks,
-                         const std::vector<LandmarkObservation>& observations, const Color& color = Color::Auto(), float weight = -1.0f);
+                         const std::vector<LandmarkObservation>& observations, float weight = -1.0f);
