@@ -8,6 +8,9 @@
 #include <trajectory2d.hpp>
 #include <vector>
 
+/// World preset identifiers
+enum class WorldPreset { Custom = 0, ASquaresHouse, VisitFromSphere, HallOfCouncil, COUNT };
+
 class App {
   public:
     App();
@@ -58,7 +61,13 @@ class App {
     /// Filter landmarks that are visible (not occluded by walls)
     std::vector<Eigen::Vector2f> filter_visible_landmarks(const Eigen::Vector2f& camera_pos) const;
 
+    /// Load a world preset
+    void load_world_preset(WorldPreset preset);
+
     bool _first_render = true;
+
+    //----- World Preset -----//
+    WorldPreset _current_preset = WorldPreset::Custom;
 
     //----- Simulation Configuration -----//
     int _num_steps = 100;

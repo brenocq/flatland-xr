@@ -10,9 +10,293 @@
 
 App::App() {}
 
-void App::startup() { _camera.set_intrinsics(100, 45.0f * M_PI / 180.0f); }
+void App::startup() {
+    _camera.set_intrinsics(100, 60.0f * M_PI / 180.0f);
+    load_world_preset(WorldPreset::ASquaresHouse); // Load default preset
+}
 
 void App::shutdown() {}
+
+void App::load_world_preset(WorldPreset preset) {
+    _current_preset = preset;
+    _gt_pose_raw.clear();
+    _gt_trajectory = Trajectory2D();
+    _landmarks.clear();
+    _walls.clear();
+    _wall_raw_points.clear();
+
+    if (preset == WorldPreset::Custom) {
+        return;
+    }
+
+    std::vector<Eigen::Vector3f> poses;
+
+    // Helper to create a regular polygon (habitant) as walls with landmarks at vertices
+    // Returns the center for reference
+    auto create_polygon = [&](Eigen::Vector2f center, float size, int sides, float rotation = 0.0f, float landmark_offset = 0.15f) {
+        std::vector<Eigen::Vector2f> vertices;
+        for (int i = 0; i < sides; i++) {
+            float angle = rotation + i * 2.0f * M_PI / sides;
+            vertices.push_back(center + Eigen::Vector2f(size * std::cos(angle), size * std::sin(angle)));
+        }
+        // Create walls
+        for (int i = 0; i < sides; i++) {
+            Wall wall;
+            wall.points.push_back(vertices[i]);
+            wall.points.push_back(vertices[(i + 1) % sides]);
+            _walls.push_back(wall);
+        }
+        // Create landmarks slightly outside each vertex
+        for (int i = 0; i < sides; i++) {
+            Eigen::Vector2f dir = (vertices[i] - center).normalized();
+            _landmarks.push_back(vertices[i] + dir * landmark_offset);
+        }
+    };
+
+    // Helper to create a line (wife/daughter in Flatland) as a wall with landmarks at ends
+    auto create_line = [&](Eigen::Vector2f center, float length, float angle, float landmark_offset = 0.15f) {
+        Eigen::Vector2f dir(std::cos(angle), std::sin(angle));
+        Eigen::Vector2f p1 = center - dir * (length / 2.0f);
+        Eigen::Vector2f p2 = center + dir * (length / 2.0f);
+        Wall wall;
+        wall.points.push_back(p1);
+        wall.points.push_back(p2);
+        _walls.push_back(wall);
+        // Landmarks at the endpoints, slightly offset outward
+        _landmarks.push_back(p1 - dir * landmark_offset);
+        _landmarks.push_back(p2 + dir * landmark_offset);
+    };
+
+    // Helper to create a circle (priest/ruler) approximated as many-sided polygon
+    auto create_circle = [&](Eigen::Vector2f center, float radius, int segments = 16, float landmark_offset = 0.15f) {
+        std::vector<Eigen::Vector2f> vertices;
+        for (int i = 0; i < segments; i++) {
+            float angle = i * 2.0f * M_PI / segments;
+            vertices.push_back(center + Eigen::Vector2f(radius * std::cos(angle), radius * std::sin(angle)));
+        }
+        // Create walls
+        for (int i = 0; i < segments; i++) {
+            Wall wall;
+            wall.points.push_back(vertices[i]);
+            wall.points.push_back(vertices[(i + 1) % segments]);
+            _walls.push_back(wall);
+        }
+        // Add landmarks at cardinal points only (to avoid too many)
+        for (int i = 0; i < 4; i++) {
+            float angle = i * M_PI / 2.0f;
+            Eigen::Vector2f dir(std::cos(angle), std::sin(angle));
+            _landmarks.push_back(center + dir * (radius + landmark_offset));
+        }
+    };
+
+    if (preset == WorldPreset::ASquaresHouse) {
+        // A Square's pentagonal house - higher class Flatlanders have more sides
+        // Pentagon house walls
+        const float house_radius = 10.0f;
+        std::vector<Eigen::Vector2f> pentagon;
+        for (int i = 0; i < 5; i++) {
+            float angle = M_PI / 2.0f + i * 2.0f * M_PI / 5.0f; // Start from top
+            pentagon.push_back(Eigen::Vector2f(house_radius * std::cos(angle), house_radius * std::sin(angle)));
+        }
+        for (int i = 0; i < 5; i++) {
+            Wall wall;
+            wall.points.push_back(pentagon[i]);
+            wall.points.push_back(pentagon[(i + 1) % 5]);
+            _walls.push_back(wall);
+        }
+
+        // A Square (narrator) - a square shape in the center-left area
+        create_polygon(Eigen::Vector2f(-3.0f, 1.0f), 0.8f, 4, M_PI / 4.0f);
+
+        // Wife (line) near southern door - lines are dangerous in Flatland!
+        create_line(Eigen::Vector2f(0.0f, -6.0f), 1.5f, M_PI / 2.0f);
+
+        // Son 1 - an equilateral triangle (lower class)
+        create_polygon(Eigen::Vector2f(-4.0f, 4.0f), 0.7f, 3, -M_PI / 2.0f);
+
+        // Son 2 - a square (same class as father)
+        create_polygon(Eigen::Vector2f(4.0f, 3.0f), 0.6f, 4, M_PI / 4.0f);
+
+        // Grandson - isosceles triangle (soldier class)
+        create_polygon(Eigen::Vector2f(2.0f, -3.0f), 0.5f, 3, M_PI / 2.0f);
+
+        // Furniture corners as small triangles
+        create_polygon(Eigen::Vector2f(-5.0f, -2.0f), 0.4f, 3, 0.0f);
+        create_polygon(Eigen::Vector2f(5.0f, -2.0f), 0.4f, 3, M_PI);
+
+        // Trajectory: A Square moving around his house visiting family
+        poses = {
+            {-6.0f, -4.0f, M_PI / 4.0f}, {-5.0f, -1.0f, M_PI / 2.0f},        {-5.0f, 3.0f, M_PI / 3.0f},  {-3.0f, 5.0f, 0.0f},
+            {2.0f, 5.0f, -M_PI / 4.0f},  {5.0f, 2.0f, -M_PI / 2.0f},         {5.0f, -2.0f, -M_PI / 2.0f}, {3.0f, -5.0f, M_PI},
+            {-1.0f, -5.0f, M_PI},        {-4.0f, -3.0f, 2.0f * M_PI / 3.0f},
+        };
+
+    } else if (preset == WorldPreset::VisitFromSphere) {
+        // The Sphere visits A Square - the climactic scene
+        // Simple rectangular room
+        float w = 12.0f, h = 10.0f;
+        _walls.push_back({{Eigen::Vector2f(-w, -h), Eigen::Vector2f(w, -h)}}); // Bottom
+        _walls.push_back({{Eigen::Vector2f(w, -h), Eigen::Vector2f(w, h)}});   // Right
+        _walls.push_back({{Eigen::Vector2f(w, h), Eigen::Vector2f(-w, h)}});   // Top
+        _walls.push_back({{Eigen::Vector2f(-w, h), Eigen::Vector2f(-w, -h)}}); // Left
+
+        // The Sphere - appears as a circle that grows and shrinks
+        // Show it at its maximum cross-section
+        create_circle(Eigen::Vector2f(5.0f, 0.0f), 2.5f, 20);
+
+        // A Square (the narrator) observing in amazement
+        create_polygon(Eigen::Vector2f(-6.0f, 0.0f), 0.8f, 4, M_PI / 4.0f);
+
+        // Wife hiding in corner (lines are shy/dangerous)
+        create_line(Eigen::Vector2f(-9.0f, -7.0f), 1.2f, M_PI / 4.0f);
+
+        // Furniture - small triangular tables
+        create_polygon(Eigen::Vector2f(-8.0f, 6.0f), 0.5f, 3, 0.0f);
+        create_polygon(Eigen::Vector2f(8.0f, 6.0f), 0.5f, 3, M_PI);
+        create_polygon(Eigen::Vector2f(8.0f, -6.0f), 0.5f, 3, M_PI);
+
+        // Trajectory: A Square approaching and circling the Sphere in wonder
+        poses = {
+            {-10.0f, 0.0f, 0.0f},        {-7.0f, 0.0f, 0.0f},
+            {-4.0f, 2.0f, M_PI / 6.0f},  {-1.0f, 5.0f, M_PI / 4.0f},
+            {3.0f, 6.0f, 0.0f},          {7.0f, 4.0f, -M_PI / 4.0f},
+            {9.0f, 0.0f, -M_PI / 2.0f},  {7.0f, -4.0f, -3.0f * M_PI / 4.0f},
+            {3.0f, -6.0f, M_PI},         {-1.0f, -5.0f, 3.0f * M_PI / 4.0f},
+            {-4.0f, -2.0f, M_PI / 2.0f}, {-6.0f, 1.0f, M_PI / 4.0f},
+        };
+
+    } else if (preset == WorldPreset::HallOfCouncil) {
+        // The grand circular hall where the ruling Circles meet
+        // Circular hall with many-sided approximation (dodecagon)
+        const float outer_radius = 18.0f;
+        const int sides = 12;
+        std::vector<Eigen::Vector2f> hall;
+        for (int i = 0; i < sides; i++) {
+            float angle = i * 2.0f * M_PI / sides;
+            hall.push_back(Eigen::Vector2f(outer_radius * std::cos(angle), outer_radius * std::sin(angle)));
+        }
+        for (int i = 0; i < sides; i++) {
+            Wall wall;
+            wall.points.push_back(hall[i]);
+            wall.points.push_back(hall[(i + 1) % sides]);
+            _walls.push_back(wall);
+        }
+
+        // Inner podium (hexagon)
+        const float inner_radius = 5.0f;
+        std::vector<Eigen::Vector2f> podium;
+        for (int i = 0; i < 6; i++) {
+            float angle = M_PI / 6.0f + i * 2.0f * M_PI / 6.0f;
+            podium.push_back(Eigen::Vector2f(inner_radius * std::cos(angle), inner_radius * std::sin(angle)));
+        }
+        for (int i = 0; i < 6; i++) {
+            Wall wall;
+            wall.points.push_back(podium[i]);
+            wall.points.push_back(podium[(i + 1) % 6]);
+            _walls.push_back(wall);
+        }
+
+        // The ruling Circles (high priests) - positioned around the hall
+        create_circle(Eigen::Vector2f(11.0f, 0.0f), 1.2f, 12);
+        create_circle(Eigen::Vector2f(-11.0f, 0.0f), 1.2f, 12);
+        create_circle(Eigen::Vector2f(0.0f, 11.0f), 1.2f, 12);
+        create_circle(Eigen::Vector2f(0.0f, -11.0f), 1.2f, 12);
+        create_circle(Eigen::Vector2f(8.0f, 8.0f), 1.0f, 12);
+        create_circle(Eigen::Vector2f(-8.0f, 8.0f), 1.0f, 12);
+        create_circle(Eigen::Vector2f(-8.0f, -8.0f), 1.0f, 12);
+        create_circle(Eigen::Vector2f(8.0f, -8.0f), 1.0f, 12);
+
+        // Isosceles guards (triangles) at entrances
+        create_polygon(Eigen::Vector2f(15.0f, 0.0f), 0.8f, 3, M_PI);
+        create_polygon(Eigen::Vector2f(-15.0f, 0.0f), 0.8f, 3, 0.0f);
+
+        // Central speaker - a high-ranking polygon (octagon)
+        create_polygon(Eigen::Vector2f(0.0f, 0.0f), 1.0f, 8, M_PI / 8.0f);
+
+        // A Square observing from the audience
+        create_polygon(Eigen::Vector2f(13.0f, 5.0f), 0.6f, 4, M_PI / 4.0f);
+
+        // Trajectory: A Square entering and observing the council
+        poses = {
+            {16.0f, 2.0f, M_PI},
+            {14.0f, 3.0f, 2.0f * M_PI / 3.0f},
+            {10.0f, 6.0f, 2.0f * M_PI / 3.0f},
+            {6.0f, 8.0f, M_PI / 2.0f},
+            {0.0f, 9.0f, M_PI / 2.0f},
+            {-6.0f, 8.0f, 2.0f * M_PI / 3.0f},
+            {-10.0f, 5.0f, 5.0f * M_PI / 6.0f},
+            {-12.0f, 0.0f, M_PI},
+            {-10.0f, -5.0f, -5.0f * M_PI / 6.0f},
+            {-6.0f, -8.0f, -2.0f * M_PI / 3.0f},
+            {0.0f, -9.0f, -M_PI / 2.0f},
+            {6.0f, -8.0f, -M_PI / 3.0f},
+            {10.0f, -5.0f, -M_PI / 6.0f},
+            {13.0f, 0.0f, 0.0f},
+        };
+    }
+
+    // Build trajectory from preset poses by interpolating between keypoints
+    if (poses.size() >= 2) {
+        const int total_poses = 60; // Target number of poses
+        std::vector<Eigen::Vector3f> dense_poses;
+        dense_poses.reserve(total_poses);
+
+        // Calculate total path length for uniform distribution
+        float total_length = 0.0f;
+        std::vector<float> segment_lengths;
+        for (size_t i = 0; i + 1 < poses.size(); i++) {
+            float dx = poses[i + 1].x() - poses[i].x();
+            float dy = poses[i + 1].y() - poses[i].y();
+            float len = std::sqrt(dx * dx + dy * dy);
+            segment_lengths.push_back(len);
+            total_length += len;
+        }
+
+        // Generate poses uniformly along the path
+        float step = total_length / (total_poses - 1);
+        float accumulated = 0.0f;
+        size_t seg_idx = 0;
+        float seg_progress = 0.0f;
+
+        for (int i = 0; i < total_poses; i++) {
+            float target_dist = i * step;
+
+            // Find which segment we're on
+            while (seg_idx < segment_lengths.size() - 1 && accumulated + segment_lengths[seg_idx] < target_dist) {
+                accumulated += segment_lengths[seg_idx];
+                seg_idx++;
+            }
+
+            // Interpolate within segment
+            float seg_len = segment_lengths[seg_idx];
+            float t = (seg_len > 0.0f) ? (target_dist - accumulated) / seg_len : 0.0f;
+            t = std::clamp(t, 0.0f, 1.0f);
+
+            float x = poses[seg_idx].x() + t * (poses[seg_idx + 1].x() - poses[seg_idx].x());
+            float y = poses[seg_idx].y() + t * (poses[seg_idx + 1].y() - poses[seg_idx].y());
+
+            // Compute orientation from movement direction
+            float orientation = 0.0f;
+            if (!dense_poses.empty()) {
+                float dx = x - dense_poses.back().x();
+                float dy = y - dense_poses.back().y();
+                if (dx != 0 || dy != 0) {
+                    orientation = std::atan2(dy, dx);
+                } else {
+                    orientation = dense_poses.back().z();
+                }
+            } else if (poses.size() > 1) {
+                float dx = poses[1].x() - poses[0].x();
+                float dy = poses[1].y() - poses[0].y();
+                orientation = std::atan2(dy, dx);
+            }
+
+            dense_poses.push_back(Eigen::Vector3f(x, y, orientation));
+        }
+
+        _gt_trajectory.build(dense_poses);
+    }
+}
 
 void App::update() {
     // Docking
@@ -287,23 +571,36 @@ void App::render_world_editor() {
     static ImVec2 wall_drag_start_pos;
 
     if (ImGui::CollapsingHeader("World Editor", ImGuiTreeNodeFlags_DefaultOpen)) {
+        // World preset selector
+        const char* preset_names[] = {"Custom", "A Square's House", "Visit from the Sphere", "Hall of the Council"};
+        int current_preset_idx = static_cast<int>(_current_preset);
+        ImGui::SetNextItemWidth(200);
+        if (ImGui::Combo("World Preset", &current_preset_idx, preset_names, IM_ARRAYSIZE(preset_names))) {
+            load_world_preset(static_cast<WorldPreset>(current_preset_idx));
+        }
+        ImGui::Separator();
+
         ImGui::TextWrapped("Ctrl+Click: Add new landmark | Ctrl+Drag: Draw trajectory");
         ImGui::SameLine();
         if (ImGui::Button("Clear trajectory")) {
             _gt_pose_raw.clear();
             _gt_trajectory = Trajectory2D();
+            _current_preset = WorldPreset::Custom;
         }
 
         ImGui::TextWrapped("Right-click landmark: Delete");
         ImGui::SameLine();
-        if (ImGui::Button("Clear all landmarks"))
+        if (ImGui::Button("Clear all landmarks")) {
             _landmarks.clear();
+            _current_preset = WorldPreset::Custom;
+        }
 
         ImGui::TextWrapped("Shift+Drag: Draw wall");
         ImGui::SameLine();
         if (ImGui::Button("Clear all walls")) {
             _walls.clear();
             _wall_raw_points.clear();
+            _current_preset = WorldPreset::Custom;
         }
 
         // Disable plot panning when Ctrl or Shift is held (we're drawing)
@@ -340,6 +637,7 @@ void App::render_world_editor() {
                             _gt_pose_raw.clear();
                             _gt_trajectory = Trajectory2D();
                             landmark_click_started = false;
+                            _current_preset = WorldPreset::Custom;
                         }
 
                         bool should_add = true;
@@ -373,6 +671,7 @@ void App::render_world_editor() {
                         std::sqrt(std::pow(current_pos.x - landmark_click_start_pos.x, 2) + std::pow(current_pos.y - landmark_click_start_pos.y, 2));
                     if (dist < 5.0f) {
                         _landmarks.push_back(Eigen::Vector2f(mouse.x, mouse.y));
+                        _current_preset = WorldPreset::Custom;
                     }
                 }
             }
@@ -404,6 +703,7 @@ void App::render_world_editor() {
                         // Start a new wall if this is the first point
                         if (_wall_raw_points.empty()) {
                             _walls.push_back(Wall{});
+                            _current_preset = WorldPreset::Custom;
                         }
 
                         bool should_add = true;
@@ -532,6 +832,7 @@ void App::render_world_editor() {
                 Color lm_color = Color::Random(i);
                 if (ImPlot::DragPoint(static_cast<int>(i), &x, &y, ImVec4(lm_color), 4.0f)) {
                     _landmarks[i] = Eigen::Vector2f(x, y);
+                    _current_preset = WorldPreset::Custom;
                 }
 
                 // Check if mouse is hovering this landmark for context menu
@@ -554,6 +855,7 @@ void App::render_world_editor() {
             }
             if (landmark_to_delete >= 0) {
                 _landmarks.erase(_landmarks.begin() + landmark_to_delete);
+                _current_preset = WorldPreset::Custom;
             }
 
             // Render walls (plain white)
@@ -598,6 +900,7 @@ void App::render_world_editor() {
             }
             if (wall_to_delete >= 0) {
                 _walls.erase(_walls.begin() + wall_to_delete);
+                _current_preset = WorldPreset::Custom;
             }
 
             ImPlot::EndPlot();
