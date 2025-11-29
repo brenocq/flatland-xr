@@ -1,135 +1,90 @@
 import os
-import requests
 import base64
 from io import BytesIO
 from PIL import Image
 
-def get_hd_emoji():
-    """Downloads the 512x512 Sunglasses Emoji."""
-    url = "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u1f60e.png"
-    print(f"Downloading HD Emoji from {url}...")
-    response = requests.get(url)
-    if response.status_code == 200:
-        return Image.open(BytesIO(response.content)).convert("RGBA")
-    raise Exception(f"Failed to download emoji. Status: {response.status_code}")
+def png_to_base64(filename):
+    """Loads local PNG and converts to base64 string for embedding."""
+    print(f"Attempting to load local image: {filename}...")
+    if not os.path.exists(filename):
+        raise FileNotFoundError(f"❌ Error: The file '{filename}' was not found.")
 
-def pil_to_base64(img):
-    """Converts a PIL Image to a base64 string for SVG embedding."""
-    buff = BytesIO()
-    img.save(buff, format="PNG")
-    img_str = base64.b64encode(buff.getvalue()).decode("utf-8")
-    return f"data:image/png;base64,{img_str}"
+    try:
+        img = Image.open(filename).convert("RGBA")
+        # Ensure it's 150x150 for this specific SVG setup
+        if img.size != (150, 150):
+             print(f"⚠️ Resizing input from {img.size} to (150, 150)")
+             img = img.resize((150, 150), Image.Resampling.LANCZOS)
+
+        buff = BytesIO()
+        img.save(buff, format="PNG")
+        img_str = base64.b64encode(buff.getvalue()).decode("utf-8")
+        print("✅ Image loaded and encoded successfully.")
+        return f"data:image/png;base64,{img_str}"
+    except Exception as e:
+        raise Exception(f"❌ Failed to process image. Error: {e}")
 
 def main():
-    # 1. Setup
-    raw_img = get_hd_emoji()
+    # --- CONFIGURATION ---
+    input_filename = "lineland-emoji.png"
+    output_filename = "animated-lineland-emoji.svg"
 
-    # Crop and Center
-    bbox = raw_img.getbbox()
-    if bbox:
-        raw_img = raw_img.crop(bbox)
+    # Canvas size
+    Size = 150
+    # Animation duration in seconds
+    Duration = "5s"
 
-    # Create the base image
-    w = 150
-    base_img = raw_img.resize((w, w), Image.Resampling.LANCZOS)
+    # THE CRITICAL SETTING: Which Y row ends up being visible?
+    # Range: 0 (top row) to 149 (bottom row).
+    # Try changing this! E.g., 75 is the middle, 100 is near the mouth.
+    TARGET_Y = 65
+    # ---------------------
 
-    # 2. Define the Animation Steps
-    # We add a few duplicate 1s at the end to make it pause on the "Line" view
-    target_heights = [150, 140, 130, 120, 110, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 5, 3, 1]
+    try:
+        img_b64 = png_to_base64(input_filename)
+    except Exception as e:
+        print(e)
+        return
 
-    frames_data = [] # Will hold the base64 strings
+    # We use an f-string to build the SVG content.
+    # We use SVG SMIL (<animate>) for smoother attribute animation than CSS.
+    svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {Size} {Size}" width="{Size}" height="{Size}">
+  <defs>
+    <mask id="squeeze-mask">
+      <rect x="0" width="{Size}" fill="white">
 
-    print(f"Processing {len(target_heights)} frames...")
+        <animate
+            attributeName="height"
+            values="{Size}; {Size}; 1; 1; {Size}"
+            keyTimes="0; 0.2; 0.5; 0.975; 1"
+            dur="{Duration}"
+            repeatCount="indefinite" />
 
-    for h in target_heights:
-        # A. DOWNSCALE (Sensor Simulation - BOX filter averages light)
-        sensor_view = base_img.resize((w, h), resample=Image.Resampling.BOX)
+        <animate
+            attributeName="y"
+            values="0; 0; {TARGET_Y}; {TARGET_Y}; 0"
+            keyTimes="0; 0.2; 0.5; 0.975; 1"
+            dur="{Duration}"
+            repeatCount="indefinite" />
 
-        # B. UPSCALE (Visualization - NEAREST keeps it pixelated)
-        # We ensure minimum visibility of 5px so it doesn't vanish completely visually
-        vis_h = max(h, 5)
-        final_view = sensor_view.resize((w, vis_h), resample=Image.Resampling.NEAREST)
+      </rect>
+    </mask>
+  </defs>
 
-        # C. CANVAS (Paste onto transparent 200x200)
-        final_frame = Image.new("RGBA", (w, w), (0, 0, 0, 0))
-        y_offset = (w - vis_h) // 2
-        final_frame.paste(final_view, (0, y_offset))
+  <image
+      href="{img_b64}"
+      x="0" y="0"
+      width="{Size}" height="{Size}"
+      mask="url(#squeeze-mask)"
+  />
 
-        # D. Convert to Base64
-        frames_data.append(pil_to_base64(final_frame))
+  </svg>"""
 
-    # 3. Generate the SVG
-    total_frames = len(frames_data)
-    total_duration = 3.0    # Total loop time
-    pause_duration = 2.0    # Time for the final frame
-    anim_duration = total_duration - pause_duration # Time for the collapse (1.0s)
+    with open(output_filename, "w") as f:
+        f.write(svg_content)
 
-    # Calculate how long each "fast" frame lasts
-    # We have (total_frames - 1) fast frames, and 1 slow frame
-    fast_frame_count = total_frames - 1
-    time_per_fast_frame = anim_duration / fast_frame_count
-
-    # Calculate duty cycles (percentage of total time visible)
-    pct_fast = (time_per_fast_frame / total_duration) * 100
-    pct_slow = (pause_duration / total_duration) * 100
-
-    svg_content = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {w}" width="{w}" height="{w}">',
-        '<defs>',
-        '<style>',
-
-        # Class 1: Fast Frames (The collapse)
-        f'@keyframes showFast {{',
-        f'  0% {{ opacity: 1; }}',
-        f'  {pct_fast:.2f}% {{ opacity: 1; }}',        # Visible duration
-        f'  {pct_fast + 0.5:.2f}% {{ opacity: 0; }}',  # +0.5% Overlap to fix flicker
-        f'  100% {{ opacity: 0; }}',
-        f'}}',
-
-        # Class 2: Slow Frame (The pause at the end)
-        f'@keyframes showSlow {{',
-        f'  0% {{ opacity: 1; }}',
-        f'  {pct_slow:.2f}% {{ opacity: 1; }}',        # Visible duration
-        f'  {pct_slow + 0.5:.2f}% {{ opacity: 0; }}',  # +0.5% Overlap
-        f'  100% {{ opacity: 0; }}',
-        f'}}',
-
-        # Apply animations
-        f'.fast-frame {{ animation: showFast {total_duration}s linear infinite; opacity: 0; }}',
-        f'.slow-frame {{ animation: showSlow {total_duration}s linear infinite; opacity: 0; }}',
-
-        '</style>',
-        '</defs>'
-    ]
-
-    # Generate Image Tags
-    for i, b64_data in enumerate(frames_data):
-        is_last = (i == total_frames - 1)
-
-        if not is_last:
-            # Logic for Fast Frames
-            delay = i * time_per_fast_frame
-            css_class = "fast-frame"
-        else:
-            # Logic for the Final Frame
-            # Starts exactly when the animation duration ends
-            delay = anim_duration
-            css_class = "slow-frame"
-
-        img_tag = (
-            f'<image href="{b64_data}" x="0" y="0" width="{w}" height="{w}" '
-            f'class="{css_class}" style="animation-delay: {delay:.3f}s" />'
-        )
-        svg_content.append(img_tag)
-
-    svg_content.append('</svg>')
-
-    # 4. Save to File
-    filename = "lineland-xr-emoji.svg"
-    with open(filename, "w") as f:
-        f.write("\n".join(svg_content))
-
-    print(f"✅ Generated animated SVG: {filename}")
+    print(f"✅ Generated masked SVG: {output_filename}")
+    print(f"ℹ️ The final visible line will be at Y position: {TARGET_Y}")
 
 if __name__ == "__main__":
     main()
