@@ -56,10 +56,15 @@ target_include_directories(implot PUBLIC ${implot_SOURCE_DIR})
 target_link_libraries(implot PUBLIC imgui)
 
 # Setup executable
+set(exe_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(EXE_SOURCE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+    ${exe_SOURCE_DIR}/main.cpp
+
+    # GUI
+    ${exe_SOURCE_DIR}/gui/window.cpp
 )
 add_executable(msckf_playground ${EXE_SOURCE})
+target_include_directories(msckf_playground PRIVATE ${exe_SOURCE_DIR})
 target_link_libraries(msckf_playground PRIVATE implot)
 
 # Silence OpenGL deprecation warnings on macOS
