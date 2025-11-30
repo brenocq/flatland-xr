@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 project(flatland-xr LANGUAGES CXX C)
 
 # Options
-option(FLATLAND_BUILD_TESTS "Build unit tests" ON)
+option(FLATLAND_XR_BUILD_TESTS "Build unit tests" ON)
 
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -143,7 +143,7 @@ endif()
 # ============================================================================
 # Testing
 # ============================================================================
-if(FLATLAND_BUILD_TESTS)
+if(FLATLAND_XR_BUILD_TESTS)
     enable_testing()
 
     # Setup Google Test
