@@ -3,10 +3,9 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <core/trajectory2d.hpp>
+#include <estimation/estimator_base.hpp>
 #include <simulation/simulation.hpp>
-#include <vector>
 
 namespace gui {
 
@@ -16,7 +15,7 @@ class PerceptionOutputPanel {
     PerceptionOutputPanel() = default;
 
     /// Render the panel
-    void render(const std::vector<Eigen::Vector3f>& est_poses, const std::vector<Eigen::Vector2f>& est_vel, const core::Trajectory2D& gt_trajectory,
+    void render(const estimation::EstimationResult& est_result, const core::Trajectory2D& gt_trajectory,
                 const simulation::SimulationResult& sim_result);
 };
 

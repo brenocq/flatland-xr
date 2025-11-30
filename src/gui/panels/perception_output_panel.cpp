@@ -9,21 +9,25 @@
 
 namespace gui {
 
-void PerceptionOutputPanel::render(const std::vector<Eigen::Vector3f>& est_poses, const std::vector<Eigen::Vector2f>& est_vel,
-                                   const core::Trajectory2D& gt_trajectory, const simulation::SimulationResult& sim_result) {
+void PerceptionOutputPanel::render(const estimation::EstimationResult& est_result, const core::Trajectory2D& gt_trajectory,
+                                   const simulation::SimulationResult& sim_result) {
     if (ImGui::CollapsingHeader("Perception Output", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if (est_poses.empty() || !sim_result.is_valid()) {
+        if (!est_result.is_valid() || !sim_result.is_valid()) {
             ImGui::Text("No estimation data available.");
             return;
         }
 
-        size_t num_poses = est_poses.size();
+        size_t num_poses = est_result.num_steps();
 
         // Prepare time index axis
         std::vector<float> time_axis(num_poses);
         for (size_t i = 0; i < num_poses; i++) {
             time_axis[i] = static_cast<float>(i);
         }
+
+        // Extract poses and velocities from estimation result
+        std::vector<Eigen::Vector3f> est_poses = est_result.get_poses();
+        std::vector<Eigen::Vector2f> est_vel = est_result.get_velocities();
 
         // 2D trajectory plot
         if (ImPlot::BeginPlot("Trajectory", ImVec2(-1, 300), ImPlotFlags_Equal)) {

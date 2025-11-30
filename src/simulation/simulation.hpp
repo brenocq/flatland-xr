@@ -22,11 +22,11 @@ struct SimulationResult {
 
     // Ground truth measurements (no noise)
     std::vector<sensors::IMUMeasurement> gt_imu;
-    std::vector<std::vector<sensors::LandmarkObservation>> gt_cam;
+    std::vector<std::vector<sensors::CameraMeasurement>> gt_cam;
 
     // Noisy measurements
     std::vector<sensors::IMUMeasurement> imu_measurements;
-    std::vector<std::vector<sensors::LandmarkObservation>> cam_measurements;
+    std::vector<std::vector<sensors::CameraMeasurement>> cam_measurements;
 
     /// Check if simulation result is valid (has data)
     bool is_valid() const { return !gt_poses.empty(); }
@@ -40,7 +40,7 @@ struct SimulationResult {
 
 /// Configuration for the simulation
 struct SimulationConfig {
-    Eigen::Vector2f gravity = Eigen::Vector2f::Zero(); ///< World gravity vector
+    Eigen::Vector2f gravity = Eigen::Vector2f(0.0f, -0.1f); ///< Flatland world gravity vector
 };
 
 /// Check if a ray from camera to landmark is blocked by any wall

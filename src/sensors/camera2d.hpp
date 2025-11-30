@@ -58,8 +58,8 @@ class Camera2D {
     /// Project multiple landmarks to camera image plane (no noise)
     /// @param pose Camera pose (x, y, orientation)
     /// @param landmarks Vector of landmark positions
-    /// @return Vector of observations for landmarks within FOV
-    std::vector<LandmarkObservation> project_landmarks(const Eigen::Vector3f& pose, const std::vector<Eigen::Vector2f>& landmarks) const;
+    /// @return Vector of measurements for landmarks within FOV
+    std::vector<CameraMeasurement> project_landmarks(const Eigen::Vector3f& pose, const std::vector<Eigen::Vector2f>& landmarks) const;
 
     /// Generate noisy measurement from ground truth projection
     /// @param pose Camera pose (x, y, orientation)
@@ -70,8 +70,8 @@ class Camera2D {
     /// Generate noisy measurements for multiple landmarks
     /// @param pose Camera pose (x, y, orientation)
     /// @param landmarks Vector of landmark positions
-    /// @return Vector of noisy observations for landmarks within FOV
-    std::vector<LandmarkObservation> measure_landmarks(const Eigen::Vector3f& pose, const std::vector<Eigen::Vector2f>& landmarks);
+    /// @return Vector of noisy measurements for landmarks within FOV
+    std::vector<CameraMeasurement> measure_landmarks(const Eigen::Vector3f& pose, const std::vector<Eigen::Vector2f>& landmarks);
 
   private:
     int _width = 100;               ///< Image width in pixels

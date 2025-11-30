@@ -84,6 +84,8 @@ set(EXE_SOURCE
     ${exe_SOURCE_DIR}/simulation/simulation.cpp
     # World
     ${exe_SOURCE_DIR}/world/world.cpp
+    # Estimation
+    ${exe_SOURCE_DIR}/estimation/imu_integrator.cpp
     # GUI
     ${exe_SOURCE_DIR}/gui/app.cpp
     ${exe_SOURCE_DIR}/gui/color.cpp

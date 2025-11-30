@@ -72,14 +72,14 @@ std::optional<float> Camera2D::project(const Eigen::Vector3f& pose, const Eigen:
     return u;
 }
 
-std::vector<LandmarkObservation> Camera2D::project_landmarks(const Eigen::Vector3f& pose, const std::vector<Eigen::Vector2f>& landmarks) const {
-    std::vector<LandmarkObservation> observations;
+std::vector<CameraMeasurement> Camera2D::project_landmarks(const Eigen::Vector3f& pose, const std::vector<Eigen::Vector2f>& landmarks) const {
+    std::vector<CameraMeasurement> observations;
     observations.reserve(landmarks.size());
 
     for (size_t i = 0; i < landmarks.size(); i++) {
         auto u = project(pose, landmarks[i]);
         if (u.has_value()) {
-            observations.push_back(LandmarkObservation(u.value(), i));
+            observations.push_back(CameraMeasurement(u.value(), i));
         }
     }
 
@@ -102,14 +102,14 @@ std::optional<float> Camera2D::measure(const Eigen::Vector3f& pose, const Eigen:
     return noisy_u;
 }
 
-std::vector<LandmarkObservation> Camera2D::measure_landmarks(const Eigen::Vector3f& pose, const std::vector<Eigen::Vector2f>& landmarks) {
-    std::vector<LandmarkObservation> observations;
+std::vector<CameraMeasurement> Camera2D::measure_landmarks(const Eigen::Vector3f& pose, const std::vector<Eigen::Vector2f>& landmarks) {
+    std::vector<CameraMeasurement> observations;
     observations.reserve(landmarks.size());
 
     for (size_t i = 0; i < landmarks.size(); i++) {
         auto u = measure(pose, landmarks[i]);
         if (u.has_value()) {
-            observations.push_back(LandmarkObservation(u.value(), i));
+            observations.push_back(CameraMeasurement(u.value(), i));
         }
     }
 

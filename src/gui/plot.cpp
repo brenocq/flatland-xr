@@ -116,7 +116,7 @@ void plot_2d_trajectory(const std::string& label, const core::Trajectory2D& traj
 }
 
 void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f& position, float orientation, const sensors::Camera2D& camera,
-                                 const std::vector<sensors::LandmarkObservation>& observations) {
+                                 const std::vector<sensors::CameraMeasurement>& observations) {
     if (observations.empty())
         return;
 
@@ -147,7 +147,7 @@ void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f
 }
 
 void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& position, const std::vector<Eigen::Vector2f>& landmarks,
-                         const std::vector<sensors::LandmarkObservation>& observations, float weight) {
+                         const std::vector<sensors::CameraMeasurement>& observations, float weight) {
     if (observations.empty())
         return;
 

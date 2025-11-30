@@ -18,6 +18,12 @@ void App::startup() {
     _imu.set_gyr_bias(0.0f);
     _imu.set_acc_noise_std(Eigen::Vector2f(0.01f, 0.01f));
     _imu.set_gyr_noise_std(0.001f);
+
+    // Setup IMU integrator
+    _imu_integrator.set_imu_model(&_imu);
+    _imu_integrator.set_gravity(_sim_config.gravity);
+    _imu_integrator.set_process_noise(0.01f, 0.001f);
+
     load_world_preset(world::Preset::ASquaresHouse);
 }
 
@@ -82,15 +88,14 @@ void App::render() {
         estimate();
     }
     _measurements_panel.render(_sim_result, _camera);
-    _perception_output_panel.render(_est_poses, _est_vel, _gt_trajectory, _sim_result);
+    _perception_output_panel.render(_estimation_result, _gt_trajectory, _sim_result);
     _error_metrics_panel.render();
 }
 
 void App::simulate() {
     // Clear previous data
     _sim_result.clear();
-    _est_poses.clear();
-    _est_vel.clear();
+    _estimation_result.clear();
 
     if (!_gt_trajectory.is_valid())
         return;
@@ -100,56 +105,26 @@ void App::simulate() {
 }
 
 void App::estimate() {
-    _est_poses.clear();
-    _est_vel.clear();
+    _estimation_result.clear();
 
     if (!_sim_result.is_valid())
         return;
 
-    size_t num_poses = _sim_result.num_steps();
-    _est_poses.reserve(num_poses);
-    _est_vel.reserve(num_poses);
+    // Update IMU integrator settings
+    _imu_integrator.set_gravity(_sim_config.gravity);
 
     // Initialize with ground truth initial state
-    _est_poses.push_back(_sim_result.gt_poses[0]);
-    _est_vel.push_back(_sim_result.gt_vel[0]);
+    _imu_integrator.reset();
+    _imu_integrator.initialize(_sim_result.gt_poses[0], _sim_result.gt_vel[0]);
 
     // Integrate IMU measurements (dt=1 since trajectory is parameterized by index)
     const float dt = 1.0f;
 
-    for (size_t i = 1; i < num_poses; i++) {
-        const sensors::IMUMeasurement& imu = _sim_result.imu_measurements[i - 1];
-        Eigen::Vector3f prev_pose = _est_poses[i - 1];
-        Eigen::Vector2f prev_vel = _est_vel[i - 1];
-        float theta = prev_pose.z();
-
-        // Remove bias from IMU measurements (we know the true bias for now)
-        Eigen::Vector2f acc_body = imu.acc - _imu.acc_bias();
-        float gyr = imu.gyr - _imu.gyr_bias();
-
-        // Rotate acceleration from body frame to world frame
-        float cos_t = std::cos(theta);
-        float sin_t = std::sin(theta);
-        Eigen::Matrix2f R_bw; // Body to world rotation
-        R_bw << cos_t, -sin_t, sin_t, cos_t;
-        Eigen::Vector2f acc_world = R_bw * acc_body;
-
-        // Add gravity back (accelerometer measures specific force = acc - gravity)
-        // So world_acc = specific_force + gravity
-        acc_world += _sim_config.gravity;
-
-        // Integrate orientation: theta_new = theta + omega * dt
-        float new_theta = theta + gyr * dt;
-
-        // Integrate velocity: v_new = v + a * dt
-        Eigen::Vector2f new_vel = prev_vel + acc_world * dt;
-
-        // Integrate position: p_new = p + v * dt + 0.5 * a * dt^2
-        Eigen::Vector2f new_pos = prev_pose.head<2>() + prev_vel * dt + 0.5f * acc_world * dt * dt;
-
-        _est_poses.push_back(Eigen::Vector3f(new_pos.x(), new_pos.y(), new_theta));
-        _est_vel.push_back(new_vel);
+    for (size_t i = 0; i < _sim_result.num_steps() - 1; i++) {
+        _imu_integrator.process_imu(_sim_result.imu_measurements[i], dt);
     }
+
+    _estimation_result = _imu_integrator.get_result();
 }
 
 } // namespace gui

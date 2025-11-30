@@ -6,6 +6,7 @@
 #include <Eigen/Dense>
 #include <core/trajectory2d.hpp>
 #include <core/types.hpp>
+#include <estimation/imu_integrator.hpp>
 #include <gui/panels/config_panel.hpp>
 #include <gui/panels/error_metrics_panel.hpp>
 #include <gui/panels/measurements_panel.hpp>
@@ -73,9 +74,9 @@ class App {
     //----- Simulation result -----//
     simulation::SimulationResult _sim_result;
 
-    //----- Estimated data -----//
-    std::vector<Eigen::Vector3f> _est_poses; ///< Estimated poses (x, y, theta)
-    std::vector<Eigen::Vector2f> _est_vel;   ///< Estimated velocities (vx, vy)
+    //----- Estimation -----//
+    estimation::IMUIntegrator _imu_integrator;
+    estimation::EstimationResult _estimation_result;
 
     //----- GUI panels -----//
     ConfigPanel _config_panel;

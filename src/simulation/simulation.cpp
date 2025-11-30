@@ -89,8 +89,8 @@ SimulationResult run(const core::Trajectory2D& trajectory, const std::vector<Eig
         result.imu_measurements.push_back(imu.measure(body_acc, gt_gyr));
 
         // Camera measurements (filter landmarks by wall occlusion)
-        std::vector<sensors::LandmarkObservation> gt_frame_obs;
-        std::vector<sensors::LandmarkObservation> noisy_frame_obs;
+        std::vector<sensors::CameraMeasurement> gt_frame_obs;
+        std::vector<sensors::CameraMeasurement> noisy_frame_obs;
         for (size_t j = 0; j < landmarks.size(); j++) {
             if (!is_landmark_occluded(pos, landmarks[j], walls)) {
                 auto gt_u = camera.project(pose, landmarks[j]);
