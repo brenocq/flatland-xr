@@ -38,6 +38,12 @@ class App {
     /// Render the app's ImGui window
     void render();
 
+    /// Render the menu bar
+    void render_menu_bar();
+
+    /// Render the about window
+    void render_about_window();
+
     /// Simulate the sensor measurements
     void simulate();
 
@@ -48,6 +54,11 @@ class App {
     void load_world_preset(world::Preset preset);
 
     bool _first_render = true;
+
+    //----- Menu state -----//
+    bool _show_imgui_demo = false;
+    bool _show_implot_demo = false;
+    bool _show_about = false;
 
     //----- Sensor models -----//
     sensors::Camera2D _camera;

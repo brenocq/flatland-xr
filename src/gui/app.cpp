@@ -60,6 +60,9 @@ void App::load_world_preset(world::Preset preset) {
 }
 
 void App::update() {
+    // Menu bar
+    render_menu_bar();
+
     // Docking
     ImGuiID dockId = ImGui::GetID("##DockSpace");
     ImGui::DockSpaceOverViewport(dockId, ImGui::GetMainViewport());
@@ -69,8 +72,16 @@ void App::update() {
     }
     ImGui::End();
 
-    // ImGui::ShowDemoWindow();
-    // ImPlot::ShowDemoWindow();
+    // Demo windows
+    if (_show_imgui_demo) {
+        ImGui::ShowDemoWindow(&_show_imgui_demo);
+    }
+    if (_show_implot_demo) {
+        ImPlot::ShowDemoWindow(&_show_implot_demo);
+    }
+    if (_show_about) {
+        render_about_window();
+    }
 }
 
 void App::render() {
@@ -131,6 +142,46 @@ void App::estimate() {
     }
 
     _estimation_result = _imu_integrator.get_result();
+}
+
+void App::render_menu_bar() {
+    if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("Windows")) {
+            ImGui::MenuItem("ImGui Demo", nullptr, &_show_imgui_demo);
+            ImGui::MenuItem("ImPlot Demo", nullptr, &_show_implot_demo);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Help")) {
+            ImGui::MenuItem("About Flatland XR", nullptr, &_show_about);
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+}
+
+void App::render_about_window() {
+    if (!ImGui::Begin("About Flatland XR", &_show_about, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::End();
+        return;
+    }
+
+    ImGui::Text("Flatland XR v0.1.0");
+    ImGui::Separator();
+
+    ImGui::TextLinkOpenURL("Homepage", "https://github.com/brenocq/flatland-xr");
+    ImGui::SameLine();
+    ImGui::TextLinkOpenURL("Issues", "https://github.com/brenocq/flatland-xr/issues");
+    ImGui::SameLine();
+    ImGui::TextLinkOpenURL("Releases", "https://github.com/brenocq/flatland-xr/releases");
+    ImGui::SameLine();
+    ImGui::TextLinkOpenURL("Sponsor", "https://github.com/sponsors/brenocq");
+
+    ImGui::Separator();
+    ImGui::Text("(c) 2025 Breno Cunha Queiroz");
+    ImGui::Text("Flatland XR is licensed under the MIT License.");
+    ImGui::Text("If you enjoy Flatland XR, please consider sponsoring the project.");
+
+    ImGui::End();
 }
 
 } // namespace gui
