@@ -41,8 +41,8 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
         }
         plot_2d_path("Estimated", est_positions, Color::Red());
 
-        _ui_state->handle_hovered_pose(sim_result.gt_poses);
-        _ui_state->handle_hovered_pose(est_poses);
+        _ui_state->handle_pose_selection(sim_result.gt_poses);
+        _ui_state->handle_pose_selection(est_poses);
 
         ImPlot::EndPlot();
     }
@@ -74,7 +74,7 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
         ImPlot::SetNextLineStyle(ImVec4(Color::Blue()), 2.0f);
         ImPlot::PlotLine("Est Y", time_axis.data(), est_y.data(), static_cast<int>(num_poses));
 
-        _ui_state->handle_hovered_time(num_poses);
+        _ui_state->handle_time_selector(num_poses);
         ImPlot::EndPlot();
     }
 
@@ -95,7 +95,7 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
         ImPlot::SetNextLineStyle(ImVec4(Color::Green()), 2.0f);
         ImPlot::PlotLine("Est Theta", time_axis.data(), est_theta.data(), static_cast<int>(num_poses));
 
-        _ui_state->handle_hovered_time(num_poses);
+        _ui_state->handle_time_selector(num_poses);
         ImPlot::EndPlot();
     }
 
@@ -126,7 +126,7 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
         ImPlot::SetNextLineStyle(ImVec4(Color::Blue()), 2.0f);
         ImPlot::PlotLine("Est Vy", time_axis.data(), est_vy.data(), static_cast<int>(num_poses));
 
-        _ui_state->handle_hovered_time(num_poses);
+        _ui_state->handle_time_selector(num_poses);
         ImPlot::EndPlot();
     }
 }

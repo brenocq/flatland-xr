@@ -3,34 +3,51 @@
 
 #include "implot.h"
 #include <cmath>
+#include <gui/color.hpp>
 #include <gui/plot.hpp>
 #include <gui/ui_state.hpp>
 
 namespace gui {
 
-void UIState::handle_hovered_time(size_t max_time_idx) {
-    // Update hovered time if plot is hovered
-    if (ImPlot::IsPlotHovered()) {
-        ImPlotPoint mouse = ImPlot::GetPlotMousePos();
-        int idx = static_cast<int>(std::round(mouse.x));
-        if (idx >= 0 && idx < static_cast<int>(max_time_idx)) {
-            hovered_time_index = idx;
-        }
+bool UIState::handle_time_selector(size_t max_time_idx) {
+    if (max_time_idx == 0)
+        return false;
+
+    // Initialize to middle if not set
+    if (selected_time_index < 0) {
+        selected_time_index = static_cast<int>(max_time_idx) / 2;
     }
 
-    // Draw highlight line if we have a valid hovered time
-    if (has_hovered_time()) {
-        plot_time_highlight(static_cast<size_t>(hovered_time_index));
+    // Clamp to valid range
+    if (selected_time_index >= static_cast<int>(max_time_idx)) {
+        selected_time_index = static_cast<int>(max_time_idx) - 1;
     }
+
+    double time_value = static_cast<double>(selected_time_index);
+    ImPlot::DragLineX(0, &time_value, ImVec4(Color::Red()), 2.0f);
+
+    // Snap to nearest integer time index
+    int new_index = static_cast<int>(std::round(time_value));
+    new_index = std::max(0, std::min(new_index, static_cast<int>(max_time_idx) - 1));
+
+    bool changed = (new_index != selected_time_index);
+    selected_time_index = new_index;
+
+    return changed;
 }
 
-void UIState::handle_hovered_pose(const std::vector<Eigen::Vector3f>& poses) {
-    // Update hovered time if plot is hovered and mouse is close to a pose
+bool UIState::handle_pose_selection(const std::vector<Eigen::Vector3f>& poses) {
+    if (poses.empty())
+        return false;
+
+    bool pose_clicked = false;
+
+    // Check if mouse is hovering over a pose
     if (ImPlot::IsPlotHovered()) {
         ImPlotPoint mouse = ImPlot::GetPlotMousePos();
         ImVec2 mouse_px = ImPlot::PlotToPixels(mouse);
 
-        float closest_dist = 10.0f;
+        float closest_dist = 5.0f;
         int closest_idx = -1;
 
         for (size_t i = 0; i < poses.size(); i++) {
@@ -42,15 +59,24 @@ void UIState::handle_hovered_pose(const std::vector<Eigen::Vector3f>& poses) {
             }
         }
 
+        // If hovering over a pose, change cursor to hand
         if (closest_idx >= 0) {
-            hovered_time_index = closest_idx;
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+
+            // Check if user clicked
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                selected_time_index = closest_idx;
+                pose_clicked = true;
+            }
         }
     }
 
-    // Draw highlight circle if we have a valid hovered time
-    if (has_hovered_time() && hovered_time_index < static_cast<int>(poses.size())) {
-        plot_pose_highlight(poses[hovered_time_index]);
+    // Draw highlight circle if we have a valid selected time
+    if (has_selected_time() && selected_time_index < static_cast<int>(poses.size())) {
+        plot_pose_highlight(poses[selected_time_index]);
     }
+
+    return pose_clicked;
 }
 
 } // namespace gui

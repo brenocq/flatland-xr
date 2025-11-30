@@ -14,17 +14,19 @@ namespace gui {
 struct UIState {
     using SharedPtr = std::shared_ptr<UIState>;
 
-    /// Currently hovered time index (-1 if none)
-    int hovered_time_index = -1;
+    /// Currently selected time index for inspection (-1 if none)
+    int selected_time_index = -1;
 
-    bool has_hovered_time() const { return hovered_time_index >= 0; }
-    void reset_hover() { hovered_time_index = -1; }
+    bool has_selected_time() const { return selected_time_index >= 0; }
+    void reset_selection() { selected_time_index = -1; }
 
-    /// Handle hover detection and draw time highlight line (call inside active ImPlot context)
-    void handle_hovered_time(size_t max_time_idx);
+    /// Draw draggable time selector line (call inside active ImPlot context)
+    /// Returns true if the time index was changed
+    bool handle_time_selector(size_t max_time_idx);
 
-    /// Handle hover detection over poses and draw pose highlight (call inside active ImPlot context)
-    void handle_hovered_pose(const std::vector<Eigen::Vector3f>& poses);
+    /// Handle click detection on poses to select time (call inside active ImPlot context)
+    /// Returns true if a pose was clicked
+    bool handle_pose_selection(const std::vector<Eigen::Vector3f>& poses);
 };
 
 } // namespace gui
