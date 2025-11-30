@@ -82,94 +82,16 @@ void App::simulate() {
         build_trajectory_from_raw_poses();
     }
 
-    // Clear previous simulation data
-    _gt_poses.clear();
-    _gt_vel.clear();
-    _gt_acc.clear();
-    _gt_omega.clear();
-    _gt_imu.clear();
-    _gt_cam.clear();
-    _imu_measurements.clear();
-    _cam_measurements.clear();
+    // Clear previous data
+    _sim_result.clear();
     _est_poses.clear();
     _est_vel.clear();
 
     if (!_gt_trajectory.is_valid())
         return;
 
-    // Sample ground truth states from trajectory
-    size_t num_poses = _gt_trajectory.num_poses();
-    _gt_poses.reserve(num_poses);
-    _gt_vel.reserve(num_poses);
-    _gt_acc.reserve(num_poses);
-    _gt_omega.reserve(num_poses);
-
-    for (size_t i = 0; i < num_poses; i++) {
-        float t = static_cast<float>(i);
-        Eigen::Vector3f pose = _gt_trajectory.pose_vector(t);
-        _gt_poses.push_back(pose);
-
-        // Use trajectory methods for velocity/acceleration
-        // Trajectory derivatives are with respect to the parameter t (pose index)
-        Eigen::Vector2f vel = _gt_trajectory.velocity(t);
-        float omega = _gt_trajectory.angular_velocity(t);
-        Eigen::Vector2f acc = _gt_trajectory.acceleration(t);
-
-        _gt_vel.push_back(vel);
-        _gt_omega.push_back(omega);
-        _gt_acc.push_back(acc);
-    }
-
-    // Generate sensor measurements
-    _gt_imu.reserve(num_poses);
-    _gt_cam.reserve(num_poses);
-    _imu_measurements.reserve(num_poses);
-    _cam_measurements.reserve(num_poses);
-
-    for (size_t i = 0; i < num_poses; i++) {
-        const Eigen::Vector3f& pose = _gt_poses[i];
-        Eigen::Vector2f pos(pose.x(), pose.y());
-        float theta = pose.z();
-
-        // IMU measurement
-        // The accelerometer measures specific force (acceleration - gravity) in body frame
-        // In body frame: a_body = R^T * (a_world - g)
-        // Note: gravity points down (-Y), but accelerometer measures reaction, so we add gravity
-        Eigen::Vector2f world_acc = _gt_acc[i];
-        Eigen::Vector2f specific_force = world_acc - _gravity; // Subtract gravity (which points down)
-
-        // Rotate to body frame
-        float cos_t = std::cos(theta);
-        float sin_t = std::sin(theta);
-        Eigen::Matrix2f R_wb; // World to body rotation
-        R_wb << cos_t, sin_t, -sin_t, cos_t;
-        Eigen::Vector2f body_acc = R_wb * specific_force;
-
-        float gt_gyr = _gt_omega[i];
-
-        // Store ground truth IMU (no noise, but with bias for comparison)
-        _gt_imu.push_back({body_acc, gt_gyr});
-        // Store noisy measurement
-        _imu_measurements.push_back(_imu.measure(body_acc, gt_gyr));
-
-        // Camera measurements (filter landmarks by wall occlusion)
-        std::vector<sensors::LandmarkObservation> gt_frame_obs;
-        std::vector<sensors::LandmarkObservation> noisy_frame_obs;
-        for (size_t j = 0; j < _landmarks.size(); j++) {
-            if (!is_landmark_occluded_by_walls(pos, _landmarks[j])) {
-                auto gt_u = _camera.project(pose, _landmarks[j]);
-                if (gt_u.has_value()) {
-                    gt_frame_obs.push_back({gt_u.value(), j});
-                    auto noisy_u = _camera.measure(pose, _landmarks[j]);
-                    if (noisy_u.has_value()) {
-                        noisy_frame_obs.push_back({noisy_u.value(), j});
-                    }
-                }
-            }
-        }
-        _gt_cam.push_back(gt_frame_obs);
-        _cam_measurements.push_back(noisy_frame_obs);
-    }
+    // Run simulation
+    _sim_result = simulation::run(_gt_trajectory, _landmarks, _walls, _camera, _imu, _sim_config);
 }
 
 void App::build_trajectory_from_raw_poses() {
@@ -332,48 +254,26 @@ static bool segments_intersect(const Eigen::Vector2f& p1, const Eigen::Vector2f&
     return t > 0.001f && t < 0.999f && u > 0.001f && u < 0.999f;
 }
 
-bool App::is_landmark_occluded_by_walls(const Eigen::Vector2f& camera_pos, const Eigen::Vector2f& landmark) const {
-    for (const auto& wall : _walls) {
-        for (size_t i = 0; i + 1 < wall.points.size(); i++) {
-            if (segments_intersect(camera_pos, landmark, wall.points[i], wall.points[i + 1])) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-std::vector<Eigen::Vector2f> App::filter_visible_landmarks(const Eigen::Vector2f& camera_pos) const {
-    std::vector<Eigen::Vector2f> visible;
-    visible.reserve(_landmarks.size());
-    for (const auto& lm : _landmarks) {
-        if (!is_landmark_occluded_by_walls(camera_pos, lm)) {
-            visible.push_back(lm);
-        }
-    }
-    return visible;
-}
-
 void App::estimate() {
     _est_poses.clear();
     _est_vel.clear();
 
-    if (_imu_measurements.empty() || _gt_poses.empty())
+    if (!_sim_result.is_valid())
         return;
 
-    size_t num_poses = _imu_measurements.size();
+    size_t num_poses = _sim_result.num_steps();
     _est_poses.reserve(num_poses);
     _est_vel.reserve(num_poses);
 
     // Initialize with ground truth initial state
-    _est_poses.push_back(_gt_poses[0]);
-    _est_vel.push_back(_gt_vel[0]);
+    _est_poses.push_back(_sim_result.gt_poses[0]);
+    _est_vel.push_back(_sim_result.gt_vel[0]);
 
     // Integrate IMU measurements (dt=1 since trajectory is parameterized by index)
     const float dt = 1.0f;
 
     for (size_t i = 1; i < num_poses; i++) {
-        const sensors::IMUMeasurement& imu = _imu_measurements[i - 1];
+        const sensors::IMUMeasurement& imu = _sim_result.imu_measurements[i - 1];
         Eigen::Vector3f prev_pose = _est_poses[i - 1];
         Eigen::Vector2f prev_vel = _est_vel[i - 1];
         float theta = prev_pose.z();
@@ -391,7 +291,7 @@ void App::estimate() {
 
         // Add gravity back (accelerometer measures specific force = acc - gravity)
         // So world_acc = specific_force + gravity
-        acc_world += _gravity;
+        acc_world += _sim_config.gravity;
 
         // Integrate orientation: theta_new = theta + omega * dt
         float new_theta = theta + gyr * dt;
@@ -417,7 +317,7 @@ bool App::render_config() {
         if (ImGui::DragFloat("Time step (s)", &_dt, 0.01f, 0.01f, 1.0f)) {
             updated = true;
         }
-        if (ImGui::DragFloat2("Gravity (m/s²)", _gravity.data(), 0.1f, -20.0f, 20.0f)) {
+        if (ImGui::DragFloat2("Gravity (m/s²)", _sim_config.gravity.data(), 0.1f, -20.0f, 20.0f)) {
             updated = true;
         }
         ImGui::Spacing();
@@ -683,7 +583,7 @@ bool App::render_world_editor() {
                 // Filter landmarks by wall occlusion, keeping track of original indices
                 std::vector<sensors::LandmarkObservation> observations;
                 for (size_t i = 0; i < _landmarks.size(); i++) {
-                    if (!is_landmark_occluded_by_walls(pos, _landmarks[i])) {
+                    if (!simulation::is_landmark_occluded(pos, _landmarks[i], _walls)) {
                         auto u = _camera.project(pose, _landmarks[i]);
                         if (u.has_value()) {
                             observations.push_back({u.value(), i});
@@ -704,7 +604,7 @@ bool App::render_world_editor() {
                             Eigen::Vector3f pose = _gt_trajectory.pose_vector(static_cast<float>(t));
                             Eigen::Vector2f pos(pose.x(), pose.y());
                             // Check wall occlusion before projecting
-                            if (is_landmark_occluded_by_walls(pos, _landmarks[closest_landmark]))
+                            if (simulation::is_landmark_occluded(pos, _landmarks[closest_landmark], _walls))
                                 continue;
                             auto u = _camera.project(pose, _landmarks[closest_landmark]);
                             if (u.has_value()) {
@@ -725,7 +625,7 @@ bool App::render_world_editor() {
                     Eigen::Vector2f pos(pose.x(), pose.y());
                     std::vector<sensors::LandmarkObservation> observations;
                     for (size_t i = 0; i < _landmarks.size(); i++) {
-                        if (!is_landmark_occluded_by_walls(pos, _landmarks[i])) {
+                        if (!simulation::is_landmark_occluded(pos, _landmarks[i], _walls)) {
                             auto u = _camera.project(pose, _landmarks[i]);
                             if (u.has_value()) {
                                 observations.push_back({u.value(), i});
@@ -830,12 +730,12 @@ bool App::render_world_editor() {
 
 void App::render_measurements() {
     if (ImGui::CollapsingHeader("Sensor Measurements")) {
-        if (_imu_measurements.empty() || _cam_measurements.empty()) {
+        if (!_sim_result.is_valid()) {
             ImGui::Text("No measurements available. Draw a trajectory first.");
             return;
         }
 
-        size_t num_steps = _imu_measurements.size();
+        size_t num_steps = _sim_result.num_steps();
 
         // Prepare time index axis
         std::vector<float> time_axis(num_steps);
@@ -851,10 +751,10 @@ void App::render_measurements() {
             std::vector<float> gt_acc_x(num_steps), gt_acc_y(num_steps);
             std::vector<float> meas_acc_x(num_steps), meas_acc_y(num_steps);
             for (size_t i = 0; i < num_steps; i++) {
-                gt_acc_x[i] = _gt_imu[i].acc.x();
-                gt_acc_y[i] = _gt_imu[i].acc.y();
-                meas_acc_x[i] = _imu_measurements[i].acc.x();
-                meas_acc_y[i] = _imu_measurements[i].acc.y();
+                gt_acc_x[i] = _sim_result.gt_imu[i].acc.x();
+                gt_acc_y[i] = _sim_result.gt_imu[i].acc.y();
+                meas_acc_x[i] = _sim_result.imu_measurements[i].acc.x();
+                meas_acc_y[i] = _sim_result.imu_measurements[i].acc.y();
             }
 
             // Colors: measurement colors and faded ground truth
@@ -885,8 +785,8 @@ void App::render_measurements() {
             // Extract data
             std::vector<float> gt_gyr(num_steps), meas_gyr(num_steps);
             for (size_t i = 0; i < num_steps; i++) {
-                gt_gyr[i] = _gt_imu[i].gyr;
-                meas_gyr[i] = _imu_measurements[i].gyr;
+                gt_gyr[i] = _sim_result.gt_imu[i].gyr;
+                meas_gyr[i] = _sim_result.imu_measurements[i].gyr;
             }
 
             // Colors
@@ -917,10 +817,10 @@ void App::render_measurements() {
 
             for (size_t t = 0; t < num_steps; t++) {
                 int time_idx = static_cast<int>(t);
-                for (const auto& obs : _gt_cam[t]) {
+                for (const auto& obs : _sim_result.gt_cam[t]) {
                     gt_tracks[obs.landmark_id].push_back({time_idx, obs.u});
                 }
-                for (const auto& obs : _cam_measurements[t]) {
+                for (const auto& obs : _sim_result.cam_measurements[t]) {
                     meas_tracks[obs.landmark_id].push_back({time_idx, obs.u});
                 }
             }
@@ -1030,7 +930,7 @@ void App::render_measurements() {
 
 void App::render_perception_output() {
     if (ImGui::CollapsingHeader("Perception Output", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if (_est_poses.empty() || _gt_poses.empty()) {
+        if (_est_poses.empty() || !_sim_result.is_valid()) {
             ImGui::Text("No estimation data available.");
             return;
         }
@@ -1064,8 +964,8 @@ void App::render_perception_output() {
             std::vector<float> gt_x(num_poses), gt_y(num_poses);
             std::vector<float> est_x(num_poses), est_y(num_poses);
             for (size_t i = 0; i < num_poses; i++) {
-                gt_x[i] = _gt_poses[i].x();
-                gt_y[i] = _gt_poses[i].y();
+                gt_x[i] = _sim_result.gt_poses[i].x();
+                gt_y[i] = _sim_result.gt_poses[i].y();
                 est_x[i] = _est_poses[i].x();
                 est_y[i] = _est_poses[i].y();
             }
@@ -1093,7 +993,7 @@ void App::render_perception_output() {
 
             std::vector<float> gt_theta(num_poses), est_theta(num_poses);
             for (size_t i = 0; i < num_poses; i++) {
-                gt_theta[i] = _gt_poses[i].z();
+                gt_theta[i] = _sim_result.gt_poses[i].z();
                 est_theta[i] = _est_poses[i].z();
             }
 
@@ -1114,8 +1014,8 @@ void App::render_perception_output() {
             std::vector<float> gt_vx(num_poses), gt_vy(num_poses);
             std::vector<float> est_vx(num_poses), est_vy(num_poses);
             for (size_t i = 0; i < num_poses; i++) {
-                gt_vx[i] = _gt_vel[i].x();
-                gt_vy[i] = _gt_vel[i].y();
+                gt_vx[i] = _sim_result.gt_vel[i].x();
+                gt_vy[i] = _sim_result.gt_vel[i].y();
                 est_vx[i] = _est_vel[i].x();
                 est_vy[i] = _est_vel[i].y();
             }

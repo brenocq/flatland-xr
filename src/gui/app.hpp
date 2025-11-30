@@ -8,6 +8,7 @@
 #include <core/types.hpp>
 #include <sensors/camera2d.hpp>
 #include <sensors/imu2d.hpp>
+#include <simulation/simulation.hpp>
 #include <vector>
 #include <world/world.hpp>
 
@@ -55,12 +56,6 @@ class App {
     /// Smooth raw wall points and build simplified wall
     void build_wall_from_raw_points();
 
-    /// Check if a ray from camera to landmark is blocked by any wall
-    bool is_landmark_occluded_by_walls(const Eigen::Vector2f& camera_pos, const Eigen::Vector2f& landmark) const;
-
-    /// Filter landmarks that are visible (not occluded by walls)
-    std::vector<Eigen::Vector2f> filter_visible_landmarks(const Eigen::Vector2f& camera_pos) const;
-
     /// Load a world preset
     void load_world_preset(world::Preset preset);
 
@@ -71,8 +66,8 @@ class App {
     sensors::IMU2D _imu;
 
     //----- Simulation parameters -----//
-    float _dt = 1.0f;                                   ///< Time step between poses (in index units)
-    Eigen::Vector2f _gravity = Eigen::Vector2f::Zero(); ///< World gravity vector (zero for 2D planar)
+    float _dt = 1.0f; ///< Time step between poses (in index units)
+    simulation::SimulationConfig _sim_config;
 
     //----- World & ground-truth states -----//
     world::Preset _current_preset = world::Preset::Custom;
@@ -81,12 +76,6 @@ class App {
     std::vector<Eigen::Vector3f> _gt_pose_raw; ///< Raw poses from mouse input (x, y, orientation)
     core::Trajectory2D _gt_trajectory;         ///< Smoothed ground truth trajectory
 
-    // Ground truth states at each time step (sampled from trajectory)
-    std::vector<Eigen::Vector3f> _gt_poses; ///< Ground truth poses (x, y, theta)
-    std::vector<Eigen::Vector2f> _gt_vel;   ///< Ground truth velocities (vx, vy)
-    std::vector<Eigen::Vector2f> _gt_acc;   ///< Ground truth accelerations (ax, ay)
-    std::vector<float> _gt_omega;           ///< Ground truth angular velocities
-
     // Landmarks
     std::vector<Eigen::Vector2f> _landmarks;
 
@@ -94,12 +83,8 @@ class App {
     std::vector<core::Wall> _walls;
     std::vector<Eigen::Vector2f> _wall_raw_points; ///< Raw points while drawing a wall
 
-    //----- Simulated measurements -----//
-    std::vector<sensors::IMUMeasurement> _gt_imu; ///< Ground truth IMU (no noise, with bias)
-    std::vector<sensors::IMUMeasurement> _imu_measurements;
-
-    std::vector<std::vector<sensors::LandmarkObservation>> _gt_cam; ///< Ground truth camera (no noise)
-    std::vector<std::vector<sensors::LandmarkObservation>> _cam_measurements;
+    //----- Simulation result -----//
+    simulation::SimulationResult _sim_result;
 
     //----- Estimated data -----//
     std::vector<Eigen::Vector3f> _est_poses; ///< Estimated poses (x, y, theta)

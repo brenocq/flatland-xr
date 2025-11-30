@@ -14,6 +14,9 @@ namespace core {
 std::optional<Eigen::Vector2f> segment_intersection(const Eigen::Vector2f& p1, const Eigen::Vector2f& p2, const Eigen::Vector2f& p3,
                                                     const Eigen::Vector2f& p4);
 
+/// Check if two line segments intersect (boolean version)
+bool segments_intersect(const Eigen::Vector2f& p1, const Eigen::Vector2f& p2, const Eigen::Vector2f& p3, const Eigen::Vector2f& p4);
+
 /// Check if a ray from origin in direction intersects a line segment
 /// Returns the intersection point if it intersects, nullopt otherwise
 std::optional<Eigen::Vector2f> ray_segment_intersection(const Eigen::Vector2f& ray_origin, const Eigen::Vector2f& ray_dir,

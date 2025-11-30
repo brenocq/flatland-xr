@@ -27,6 +27,10 @@ std::optional<Eigen::Vector2f> segment_intersection(const Eigen::Vector2f& p1, c
     return std::nullopt;
 }
 
+bool segments_intersect(const Eigen::Vector2f& p1, const Eigen::Vector2f& p2, const Eigen::Vector2f& p3, const Eigen::Vector2f& p4) {
+    return segment_intersection(p1, p2, p3, p4).has_value();
+}
+
 std::optional<Eigen::Vector2f> ray_segment_intersection(const Eigen::Vector2f& ray_origin, const Eigen::Vector2f& ray_dir,
                                                         const Eigen::Vector2f& seg_start, const Eigen::Vector2f& seg_end) {
     Eigen::Vector2f seg_dir = seg_end - seg_start;
