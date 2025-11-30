@@ -85,6 +85,14 @@ add_library(flatland-core STATIC ${SRC_DIR}/core/geometry.cpp ${SRC_DIR}/core/tr
 target_include_directories(flatland-core PUBLIC ${SRC_DIR})
 target_link_libraries(flatland-core PUBLIC Eigen3::Eigen)
 
+# MSVC-specific settings
+if(MSVC)
+    # Enable M_PI and other math constants from <cmath>
+    add_compile_definitions(_USE_MATH_DEFINES)
+    # Disable warnings from external headers (Eigen)
+    add_compile_options(/external:anglebrackets /external:W0)
+endif()
+
 # Sensors library
 add_library(flatland-sensors STATIC ${SRC_DIR}/sensors/camera2d.cpp ${SRC_DIR}/sensors/imu2d.cpp)
 target_include_directories(flatland-sensors PUBLIC ${SRC_DIR})
