@@ -76,7 +76,9 @@ set(EXE_SOURCE
     ${exe_SOURCE_DIR}/main.cpp
     ${exe_SOURCE_DIR}/camera2d.cpp
     ${exe_SOURCE_DIR}/imu2d.cpp
-    ${exe_SOURCE_DIR}/trajectory2d.cpp
+    # Core
+    ${exe_SOURCE_DIR}/core/geometry.cpp
+    ${exe_SOURCE_DIR}/core/trajectory2d.cpp
     # GUI
     ${exe_SOURCE_DIR}/gui/app.cpp
     ${exe_SOURCE_DIR}/gui/color.cpp
@@ -84,7 +86,7 @@ set(EXE_SOURCE
     ${exe_SOURCE_DIR}/gui/window.cpp
 )
 add_executable(flatland-xr ${EXE_SOURCE})
-target_include_directories(flatland-xr PRIVATE ${exe_SOURCE_DIR} ${eigen_SOURCE_DIR})
+target_include_directories(flatland-xr PRIVATE ${exe_SOURCE_DIR} ${exe_SOURCE_DIR}/core ${eigen_SOURCE_DIR})
 target_link_libraries(flatland-xr PRIVATE implot Eigen3::Eigen)
 
 # Silence OpenGL deprecation warnings on macOS

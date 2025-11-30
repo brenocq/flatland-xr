@@ -5,8 +5,9 @@
 
 #include <Eigen/Dense>
 #include <camera2d.hpp>
+#include <core/trajectory2d.hpp>
+#include <core/types.hpp>
 #include <imu2d.hpp>
-#include <trajectory2d.hpp>
 #include <vector>
 
 /// World preset identifiers
@@ -75,15 +76,15 @@ class App {
     IMU2D _imu;
 
     //----- Simulation parameters -----//
-    float _dt = 1.0f;                                     ///< Time step between poses (in index units)
-    Eigen::Vector2f _gravity = Eigen::Vector2f::Zero();   ///< World gravity vector (zero for 2D planar)
+    float _dt = 1.0f;                                   ///< Time step between poses (in index units)
+    Eigen::Vector2f _gravity = Eigen::Vector2f::Zero(); ///< World gravity vector (zero for 2D planar)
 
     //----- World & ground-truth states -----//
     WorldPreset _current_preset = WorldPreset::Custom;
 
     // Trajectory
     std::vector<Eigen::Vector3f> _gt_pose_raw; ///< Raw poses from mouse input (x, y, orientation)
-    Trajectory2D _gt_trajectory;               ///< Smoothed ground truth trajectory
+    core::Trajectory2D _gt_trajectory;         ///< Smoothed ground truth trajectory
 
     // Ground truth states at each time step (sampled from trajectory)
     std::vector<Eigen::Vector3f> _gt_poses; ///< Ground truth poses (x, y, theta)
@@ -95,10 +96,7 @@ class App {
     std::vector<Eigen::Vector2f> _landmarks;
 
     // Walls
-    struct Wall {
-        std::vector<Eigen::Vector2f> points; ///< Line segment points forming the wall
-    };
-    std::vector<Wall> _walls;
+    std::vector<core::Wall> _walls;
     std::vector<Eigen::Vector2f> _wall_raw_points; ///< Raw points while drawing a wall
 
     //----- Simulated measurements -----//

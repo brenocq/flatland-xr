@@ -5,6 +5,7 @@
 #include "implot.h"
 
 #include <cmath>
+#include <core/geometry.hpp>
 #include <gui/app.hpp>
 #include <gui/plot.hpp>
 #include <map>
@@ -26,7 +27,7 @@ void App::shutdown() {}
 void App::load_world_preset(WorldPreset preset) {
     _current_preset = preset;
     _gt_pose_raw.clear();
-    _gt_trajectory = Trajectory2D();
+    _gt_trajectory = core::Trajectory2D();
     _landmarks.clear();
     _walls.clear();
     _wall_raw_points.clear();
@@ -47,7 +48,7 @@ void App::load_world_preset(WorldPreset preset) {
         }
         // Create walls
         for (int i = 0; i < sides; i++) {
-            Wall wall;
+            core::Wall wall;
             wall.points.push_back(vertices[i]);
             wall.points.push_back(vertices[(i + 1) % sides]);
             _walls.push_back(wall);
@@ -64,7 +65,7 @@ void App::load_world_preset(WorldPreset preset) {
         Eigen::Vector2f dir(std::cos(angle), std::sin(angle));
         Eigen::Vector2f p1 = center - dir * (length / 2.0f);
         Eigen::Vector2f p2 = center + dir * (length / 2.0f);
-        Wall wall;
+        core::Wall wall;
         wall.points.push_back(p1);
         wall.points.push_back(p2);
         _walls.push_back(wall);
@@ -82,7 +83,7 @@ void App::load_world_preset(WorldPreset preset) {
         }
         // Create walls
         for (int i = 0; i < segments; i++) {
-            Wall wall;
+            core::Wall wall;
             wall.points.push_back(vertices[i]);
             wall.points.push_back(vertices[(i + 1) % segments]);
             _walls.push_back(wall);
@@ -105,7 +106,7 @@ void App::load_world_preset(WorldPreset preset) {
             pentagon.push_back(Eigen::Vector2f(house_radius * std::cos(angle), house_radius * std::sin(angle)));
         }
         for (int i = 0; i < 5; i++) {
-            Wall wall;
+            core::Wall wall;
             wall.points.push_back(pentagon[i]);
             wall.points.push_back(pentagon[(i + 1) % 5]);
             _walls.push_back(wall);
@@ -182,7 +183,7 @@ void App::load_world_preset(WorldPreset preset) {
             hall.push_back(Eigen::Vector2f(outer_radius * std::cos(angle), outer_radius * std::sin(angle)));
         }
         for (int i = 0; i < sides; i++) {
-            Wall wall;
+            core::Wall wall;
             wall.points.push_back(hall[i]);
             wall.points.push_back(hall[(i + 1) % sides]);
             _walls.push_back(wall);
@@ -196,7 +197,7 @@ void App::load_world_preset(WorldPreset preset) {
             podium.push_back(Eigen::Vector2f(inner_radius * std::cos(angle), inner_radius * std::sin(angle)));
         }
         for (int i = 0; i < 6; i++) {
-            Wall wall;
+            core::Wall wall;
             wall.points.push_back(podium[i]);
             wall.points.push_back(podium[(i + 1) % 6]);
             _walls.push_back(wall);
@@ -362,7 +363,7 @@ void App::simulate() {
 
     for (size_t i = 0; i < num_poses; i++) {
         float t = static_cast<float>(i);
-        Eigen::Vector3f pose = _gt_trajectory.pose(t);
+        Eigen::Vector3f pose = _gt_trajectory.pose_vector(t);
         _gt_poses.push_back(pose);
 
         // Use trajectory methods for velocity/acceleration
@@ -430,7 +431,7 @@ void App::simulate() {
 
 void App::build_trajectory_from_raw_poses() {
     if (_gt_pose_raw.size() < 4) {
-        _gt_trajectory = Trajectory2D();
+        _gt_trajectory = core::Trajectory2D();
         return;
     }
 
@@ -748,7 +749,7 @@ bool App::render_world_editor() {
         ImGui::SameLine();
         if (ImGui::Button("Clear trajectory")) {
             _gt_pose_raw.clear();
-            _gt_trajectory = Trajectory2D();
+            _gt_trajectory = core::Trajectory2D();
             _current_preset = WorldPreset::Custom;
             world_changed = true;
         }
@@ -802,7 +803,7 @@ bool App::render_world_editor() {
                         // Clear trajectory on first drag movement
                         if (landmark_click_started) {
                             _gt_pose_raw.clear();
-                            _gt_trajectory = Trajectory2D();
+                            _gt_trajectory = core::Trajectory2D();
                             landmark_click_started = false;
                             _current_preset = WorldPreset::Custom;
                         }
@@ -874,7 +875,7 @@ bool App::render_world_editor() {
                     if (drag_dist > 3.0f) {
                         // Start a new wall if this is the first point
                         if (_wall_raw_points.empty()) {
-                            _walls.push_back(Wall{});
+                            _walls.push_back(core::Wall{});
                             _current_preset = WorldPreset::Custom;
                         }
 
@@ -934,7 +935,7 @@ bool App::render_world_editor() {
             if (is_drawing && _gt_trajectory.is_valid()) {
                 // Show camera at last pose while drawing
                 float last_t = _gt_trajectory.max_t();
-                Eigen::Vector3f pose = _gt_trajectory.pose(last_t);
+                Eigen::Vector3f pose = _gt_trajectory.pose_vector(last_t);
                 Eigen::Vector2f pos(pose.x(), pose.y());
                 // Filter landmarks by wall occlusion, keeping track of original indices
                 std::vector<LandmarkObservation> observations;
@@ -957,7 +958,7 @@ bool App::render_world_editor() {
                     if (_gt_trajectory.is_valid()) {
                         int num_poses = static_cast<int>(_gt_trajectory.max_t()) + 1;
                         for (int t = 0; t < num_poses; t++) {
-                            Eigen::Vector3f pose = _gt_trajectory.pose(static_cast<float>(t));
+                            Eigen::Vector3f pose = _gt_trajectory.pose_vector(static_cast<float>(t));
                             Eigen::Vector2f pos(pose.x(), pose.y());
                             // Check wall occlusion before projecting
                             if (is_landmark_occluded_by_walls(pos, _landmarks[closest_landmark]))
@@ -976,7 +977,7 @@ bool App::render_world_editor() {
                     ImGui::SetTooltip("Landmark %d\nPos: (%.2f, %.2f)\nObservations: %d", closest_landmark, _landmarks[closest_landmark].x(),
                                       _landmarks[closest_landmark].y(), obs_count);
                 } else if (closest_gt >= 0 && _gt_trajectory.is_valid()) {
-                    Eigen::Vector3f pose = _gt_trajectory.pose(static_cast<float>(closest_gt));
+                    Eigen::Vector3f pose = _gt_trajectory.pose_vector(static_cast<float>(closest_gt));
                     // Draw camera frustum with projected landmarks (filtered by walls)
                     Eigen::Vector2f pos(pose.x(), pose.y());
                     std::vector<LandmarkObservation> observations;

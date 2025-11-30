@@ -3,9 +3,12 @@
 
 #pragma once
 
+#include "types.hpp"
 #include <Eigen/Dense>
 #include <unsupported/Eigen/Splines>
 #include <vector>
+
+namespace core {
 
 /// Continuous 2D trajectory using cubic splines
 /// Parameterized by arc-length so distance between integer parameters is constant
@@ -16,6 +19,7 @@ class Trajectory2D {
     /// Build trajectory from discrete poses (x, y, theta)
     /// Poses are assumed to be at t=0,1,2,3,...
     void build(const std::vector<Eigen::Vector3f>& poses);
+    void build(const std::vector<Pose2D>& poses);
 
     /// Check if trajectory has been built
     bool is_valid() const { return _valid; }
@@ -29,8 +33,11 @@ class Trajectory2D {
     /// Get orientation at parameter t (can be fractional)
     float orientation(float t) const;
 
-    /// Get full pose (x, y, theta) at parameter t
-    Eigen::Vector3f pose(float t) const;
+    /// Get full pose at parameter t
+    Pose2D pose(float t) const;
+
+    /// Get full pose as vector (x, y, theta) at parameter t
+    Eigen::Vector3f pose_vector(float t) const;
 
     /// Get linear velocity (dx/dt, dy/dt) at parameter t
     Eigen::Vector2f velocity(float t) const;
@@ -57,9 +64,6 @@ class Trajectory2D {
     /// Normalize parameter t to [0, 1] for spline evaluation
     float normalize_param(float t) const;
 
-    /// Unwrap angles to ensure continuity for spline fitting
-    std::vector<float> unwrap_angles(const std::vector<float>& angles) const;
-
     bool _valid = false;
     size_t _num_poses = 0;
 
@@ -69,3 +73,5 @@ class Trajectory2D {
     Spline1D _spline_y;
     Spline1D _spline_theta;
 };
+
+} // namespace core

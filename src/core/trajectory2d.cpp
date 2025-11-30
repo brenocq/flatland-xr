@@ -2,8 +2,11 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include "trajectory2d.hpp"
+#include "geometry.hpp"
 #include <algorithm>
 #include <cmath>
+
+namespace core {
 
 void Trajectory2D::build(const std::vector<Eigen::Vector3f>& poses) {
     _valid = false;
@@ -48,31 +51,20 @@ void Trajectory2D::build(const std::vector<Eigen::Vector3f>& poses) {
     _valid = true;
 }
 
+void Trajectory2D::build(const std::vector<Pose2D>& poses) {
+    std::vector<Eigen::Vector3f> pose_vectors;
+    pose_vectors.reserve(poses.size());
+    for (const auto& p : poses) {
+        pose_vectors.push_back(p.to_vector());
+    }
+    build(pose_vectors);
+}
+
 float Trajectory2D::normalize_param(float t) const {
     if (_num_poses <= 1)
         return 0.0f;
     float u = t / static_cast<float>(_num_poses - 1);
     return std::max(0.0f, std::min(u, 1.0f));
-}
-
-std::vector<float> Trajectory2D::unwrap_angles(const std::vector<float>& angles) const {
-    if (angles.empty())
-        return {};
-
-    std::vector<float> unwrapped(angles.size());
-    unwrapped[0] = angles[0];
-
-    for (size_t i = 1; i < angles.size(); i++) {
-        float diff = angles[i] - angles[i - 1];
-        // Normalize difference to [-pi, pi]
-        while (diff > M_PI)
-            diff -= 2.0f * M_PI;
-        while (diff < -M_PI)
-            diff += 2.0f * M_PI;
-        unwrapped[i] = unwrapped[i - 1] + diff;
-    }
-
-    return unwrapped;
 }
 
 Eigen::Vector2f Trajectory2D::position(float t) const {
@@ -91,15 +83,12 @@ float Trajectory2D::orientation(float t) const {
 
     float u = normalize_param(t);
     float theta = _spline_theta(u)(0);
-    // Normalize to [-pi, pi]
-    while (theta > M_PI)
-        theta -= 2.0f * M_PI;
-    while (theta < -M_PI)
-        theta += 2.0f * M_PI;
-    return theta;
+    return normalize_angle(theta);
 }
 
-Eigen::Vector3f Trajectory2D::pose(float t) const {
+Pose2D Trajectory2D::pose(float t) const { return Pose2D(position(t), orientation(t)); }
+
+Eigen::Vector3f Trajectory2D::pose_vector(float t) const {
     Eigen::Vector2f pos = position(t);
     float theta = orientation(t);
     return Eigen::Vector3f(pos.x(), pos.y(), theta);
@@ -163,3 +152,5 @@ float Trajectory2D::speed(float t) const {
     Eigen::Vector2f vel = velocity(t);
     return vel.norm();
 }
+
+} // namespace core

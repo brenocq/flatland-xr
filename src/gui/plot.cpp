@@ -4,8 +4,8 @@
 #include "implot.h"
 #include <camera2d.hpp>
 #include <cmath>
+#include <core/trajectory2d.hpp>
 #include <gui/plot.hpp>
-#include <trajectory2d.hpp>
 
 void plot_2d_path(const std::string& label, const std::vector<Eigen::Vector2f>& positions, const Color& color, float weight) {
     plot_2d_line(label, positions, color, weight);
@@ -66,7 +66,7 @@ void plot_2d_poses(const std::string& label, const std::vector<Eigen::Vector3f>&
     plot_2d_scatter("##" + label + "_scatter", positions, color, scatter_size);
 }
 
-void plot_2d_trajectory(const std::string& label, const Trajectory2D& trajectory, const Color& color, float weight, float scatter_size) {
+void plot_2d_trajectory(const std::string& label, const core::Trajectory2D& trajectory, const Color& color, float weight, float scatter_size) {
     if (!trajectory.is_valid())
         return;
 
