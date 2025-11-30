@@ -5,6 +5,7 @@
 
 #include <Eigen/Dense>
 #include <estimation/estimator_base.hpp>
+#include <memory>
 #include <sensors/imu2d.hpp>
 
 namespace estimation {
@@ -17,7 +18,7 @@ class IMUIntegrator : public EstimatorBase {
     IMUIntegrator() = default;
 
     /// Set the IMU model (for bias and noise parameters)
-    void set_imu_model(const sensors::IMU2D* imu) { _imu = imu; }
+    void set_imu_model(std::shared_ptr<sensors::IMU2D> imu) { _imu = imu; }
 
     /// Set the gravity vector (world frame, points toward ground)
     void set_gravity(const Eigen::Vector2f& gravity) { _gravity = gravity; }
@@ -33,7 +34,7 @@ class IMUIntegrator : public EstimatorBase {
     EstimationResult get_result() const override;
 
   private:
-    const sensors::IMU2D* _imu = nullptr;
+    std::shared_ptr<sensors::IMU2D> _imu;
     Eigen::Vector2f _gravity = Eigen::Vector2f::Zero();
 
     // Current state

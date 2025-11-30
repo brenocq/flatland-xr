@@ -24,7 +24,7 @@ class WorldEditorPanel {
     /// Render the panel. Returns true if the world changed.
     bool render(world::Preset& current_preset, std::vector<Eigen::Vector3f>& gt_pose_raw, core::Trajectory2D& gt_trajectory,
                 std::vector<Eigen::Vector2f>& landmarks, std::vector<core::Wall>& walls, std::vector<Eigen::Vector2f>& wall_raw_points,
-                const sensors::Camera2D& camera);
+                const std::shared_ptr<sensors::Camera2D> camera);
 
   private:
     UIState::SharedPtr _ui_state;

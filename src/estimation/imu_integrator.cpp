@@ -19,8 +19,9 @@ void IMUIntegrator::reset() {
 void IMUIntegrator::initialize(const Eigen::Vector3f& initial_pose, const Eigen::Vector2f& initial_vel) {
     _current_state.pose = initial_pose;
     _current_state.velocity = initial_vel;
-    _current_state.pose_cov = Eigen::Matrix3f::Zero(); // Perfect initial knowledge
-    _current_state.vel_cov = Eigen::Matrix2f::Zero();
+    // Small initial covariance (not perfect knowledge)
+    _current_state.pose_cov = Eigen::Matrix3f::Identity() * 0.01f; // 10cm std for position, 0.01 rad for orientation
+    _current_state.vel_cov = Eigen::Matrix2f::Identity() * 0.01f;  // 10cm/s std for velocity
     _state_history.clear();
     _state_history.push_back(_current_state);
 }
@@ -28,6 +29,14 @@ void IMUIntegrator::initialize(const Eigen::Vector3f& initial_pose, const Eigen:
 void IMUIntegrator::process_imu(const sensors::IMUMeasurement& imu, float dt) {
     if (!_imu)
         return;
+
+    // State vector indices: [x, y, theta, vx, vy]
+    constexpr size_t STATE_DIM = 5;
+    constexpr size_t IDX_X = 0;
+    constexpr size_t IDX_Y = 1;
+    constexpr size_t IDX_THETA = 2;
+    constexpr size_t IDX_VX = 3;
+    constexpr size_t IDX_VY = 4;
 
     // Get current state
     float theta = _current_state.pose.z();
@@ -48,39 +57,63 @@ void IMUIntegrator::process_imu(const sensors::IMUMeasurement& imu, float dt) {
     // Add gravity back (accelerometer measures specific force = acc - gravity)
     acc_world += _gravity;
 
-    // Integrate orientation: theta_new = theta + omega * dt
+    // State propagation (prediction step)
+    // x_new = x + vx * dt
+    // y_new = y + vy * dt
+    // theta_new = theta + omega * dt
+    // vx_new = vx + ax_world * dt
+    // vy_new = vy + ay_world * dt
+
     float new_theta = theta + gyr * dt;
-
-    // Integrate velocity: v_new = v + a * dt
     Eigen::Vector2f new_vel = vel + acc_world * dt;
-
-    // Integrate position: p_new = p + v * dt + 0.5 * a * dt^2
-    Eigen::Vector2f new_pos = pos + vel * dt + 0.5f * acc_world * dt * dt;
+    Eigen::Vector2f new_pos = pos + vel * dt;
 
     // Update state
     _current_state.pose = Eigen::Vector3f(new_pos.x(), new_pos.y(), new_theta);
     _current_state.velocity = new_vel;
 
-    // Propagate covariance using first-order approximation
-    // State: [x, y, theta], Control: [ax_body, ay_body, omega]
-    // The state transition Jacobian w.r.t. state
-    Eigen::Matrix3f F = Eigen::Matrix3f::Identity();
-    F(0, 2) = -acc_body.x() * sin_t * dt * dt * 0.5f - acc_body.y() * cos_t * dt * dt * 0.5f;
-    F(1, 2) = acc_body.x() * cos_t * dt * dt * 0.5f - acc_body.y() * sin_t * dt * dt * 0.5f;
+    // Build the state transition matrix F (5x5)
+    // F is mostly identity except for coupling terms
+    Eigen::Matrix<float, STATE_DIM, STATE_DIM> F = Eigen::Matrix<float, STATE_DIM, STATE_DIM>::Identity();
 
-    // Process noise covariance (simplified)
-    Eigen::Matrix3f Q = Eigen::Matrix3f::Zero();
+    // Position depends on velocity
+    F(IDX_X, IDX_VX) = dt;
+    F(IDX_Y, IDX_VY) = dt;
+
+    // Velocity depends on orientation (through rotation of body frame acceleration)
+    F(IDX_VX, IDX_THETA) = (-acc_body.x() * sin_t - acc_body.y() * cos_t) * dt;
+    F(IDX_VY, IDX_THETA) = (acc_body.x() * cos_t - acc_body.y() * sin_t) * dt;
+
+    // Build the process noise covariance Q (5x5)
+    // Noise comes from: acceleration noise (affects vx, vy) and gyroscope noise (affects theta)
+    Eigen::Matrix<float, STATE_DIM, STATE_DIM> Q = Eigen::Matrix<float, STATE_DIM, STATE_DIM>::Zero();
+
     float acc_var = _acc_noise_std * _acc_noise_std;
     float gyr_var = _gyr_noise_std * _gyr_noise_std;
-    Q(0, 0) = acc_var * dt * dt * dt * dt / 4.0f; // Position noise from acc
-    Q(1, 1) = acc_var * dt * dt * dt * dt / 4.0f;
-    Q(2, 2) = gyr_var * dt * dt; // Orientation noise from gyro
 
-    _current_state.pose_cov = F * _current_state.pose_cov * F.transpose() + Q;
+    // Position noise (from velocity uncertainty propagation: integral of velocity noise)
+    Q(IDX_X, IDX_X) = acc_var * dt * dt * dt * dt / 4.0f;
+    Q(IDX_Y, IDX_Y) = acc_var * dt * dt * dt * dt / 4.0f;
 
-    // Velocity covariance propagation
-    Eigen::Matrix2f Q_vel = Eigen::Matrix2f::Identity() * acc_var * dt * dt;
-    _current_state.vel_cov = _current_state.vel_cov + Q_vel;
+    // Orientation noise (from gyroscope)
+    Q(IDX_THETA, IDX_THETA) = gyr_var * dt * dt;
+
+    // Velocity noise (from accelerometer)
+    Q(IDX_VX, IDX_VX) = acc_var * dt * dt;
+    Q(IDX_VY, IDX_VY) = acc_var * dt * dt;
+
+    // Build combined covariance matrix (5x5)
+    Eigen::Matrix<float, STATE_DIM, STATE_DIM> P = Eigen::Matrix<float, STATE_DIM, STATE_DIM>::Zero();
+    P.block<3, 3>(IDX_X, IDX_X) = _current_state.pose_cov;
+    P.block<2, 2>(IDX_VX, IDX_VX) = _current_state.vel_cov;
+    // Cross-covariances between pose and velocity will be propagated
+
+    // Covariance propagation: P_new = F * P * F^T + Q
+    P = F * P * F.transpose() + Q;
+
+    // Extract pose and velocity covariances
+    _current_state.pose_cov = P.block<3, 3>(IDX_X, IDX_X);
+    _current_state.vel_cov = P.block<2, 2>(IDX_VX, IDX_VX);
 
     // Store in history
     _state_history.push_back(_current_state);

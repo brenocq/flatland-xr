@@ -12,7 +12,8 @@
 
 namespace gui {
 
-void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, const sensors::Camera2D& camera, const sensors::IMU2D& imu) {
+void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, std::shared_ptr<sensors::Camera2D> camera,
+                               std::shared_ptr<sensors::IMU2D> imu) {
     if (!sim_result.is_valid()) {
         widgets::Text("No measurements available. Draw a trajectory first.");
         return;
@@ -38,7 +39,7 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
         }
 
         // Plot measurement covariance (constant std for all time steps)
-        std::vector<Eigen::Vector2f> acc_std(num_steps, imu.acc_noise_std());
+        std::vector<Eigen::Vector2f> acc_std(num_steps, imu->acc_noise_std());
         plot_covariance("Acc", time_axis, meas_acc, acc_std);
 
         // Plot ground truth and measurements
@@ -63,7 +64,7 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
         // Plot measurement covariance (constant std for all time steps)
         std::vector<Eigen::Vector<float, 1>> gyr_std(num_steps);
         for (size_t i = 0; i < num_steps; ++i)
-            gyr_std[i](0) = imu.gyr_noise_std();
+            gyr_std[i](0) = imu->gyr_noise_std();
         plot_covariance("Gyr", time_axis, gyr_meas, gyr_std, Color::DefaultPalette());
 
         // Plot ground truth and measurements
@@ -78,7 +79,7 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
     if (ImPlot::BeginPlot("Camera Observations", ImVec2(-1, 300))) {
         ImPlot::SetupAxes("Time Index", "Image u (px)");
         ImPlot::SetupAxisLimits(ImAxis_X1, 0, static_cast<double>(num_steps));
-        ImPlot::SetupAxisLimits(ImAxis_Y1, 0, camera.width());
+        ImPlot::SetupAxisLimits(ImAxis_Y1, 0, camera->width());
 
         // For each landmark, collect observations across time
         // Store as (time_index, u) pairs, then split into consecutive segments

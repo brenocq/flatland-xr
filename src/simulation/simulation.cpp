@@ -29,7 +29,7 @@ bool is_landmark_occluded(const Eigen::Vector2f& camera_pos, const Eigen::Vector
 }
 
 SimulationResult run(const core::Trajectory2D& trajectory, const std::vector<Eigen::Vector2f>& landmarks, const std::vector<core::Wall>& walls,
-                     sensors::Camera2D& camera, sensors::IMU2D& imu, const SimulationConfig& config) {
+                     std::shared_ptr<sensors::Camera2D> camera, std::shared_ptr<sensors::IMU2D> imu, const SimulationConfig& config) {
     SimulationResult result;
 
     if (!trajectory.is_valid())
@@ -86,17 +86,17 @@ SimulationResult run(const core::Trajectory2D& trajectory, const std::vector<Eig
         // Store ground truth IMU (no noise, but with bias for comparison)
         result.gt_imu.emplace_back(body_acc, gt_gyr);
         // Store noisy measurement
-        result.imu_measurements.push_back(imu.measure(body_acc, gt_gyr));
+        result.imu_measurements.push_back(imu->measure(body_acc, gt_gyr));
 
         // Camera measurements (filter landmarks by wall occlusion)
         std::vector<sensors::CameraMeasurement> gt_frame_obs;
         std::vector<sensors::CameraMeasurement> noisy_frame_obs;
         for (size_t j = 0; j < landmarks.size(); j++) {
             if (!is_landmark_occluded(pos, landmarks[j], walls)) {
-                auto gt_u = camera.project(pose, landmarks[j]);
+                auto gt_u = camera->project(pose, landmarks[j]);
                 if (gt_u.has_value()) {
                     gt_frame_obs.emplace_back(gt_u.value(), j);
-                    auto noisy_u = camera.measure(pose, landmarks[j]);
+                    auto noisy_u = camera->measure(pose, landmarks[j]);
                     if (noisy_u.has_value()) {
                         noisy_frame_obs.emplace_back(noisy_u.value(), j);
                     }

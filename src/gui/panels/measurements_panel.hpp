@@ -18,7 +18,7 @@ class MeasurementsPanel {
     void set_ui_state(UIState::SharedPtr ui_state) { _ui_state = std::move(ui_state); }
 
     /// Render the panel
-    void render(const simulation::SimulationResult& sim_result, const sensors::Camera2D& camera, const sensors::IMU2D& imu);
+    void render(const simulation::SimulationResult& sim_result, std::shared_ptr<sensors::Camera2D> camera, std::shared_ptr<sensors::IMU2D> imu);
 
   private:
     UIState::SharedPtr _ui_state;

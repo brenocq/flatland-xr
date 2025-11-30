@@ -13,6 +13,7 @@
 #include <gui/panels/perception_output_panel.hpp>
 #include <gui/panels/world_editor_panel.hpp>
 #include <gui/ui_state.hpp>
+#include <memory>
 #include <sensors/camera2d.hpp>
 #include <sensors/imu2d.hpp>
 #include <simulation/simulation.hpp>
@@ -61,8 +62,8 @@ class App {
     bool _show_about = false;
 
     //----- Sensor models -----//
-    sensors::Camera2D _camera;
-    sensors::IMU2D _imu;
+    std::shared_ptr<sensors::Camera2D> _camera;
+    std::shared_ptr<sensors::IMU2D> _imu;
 
     //----- Simulation parameters -----//
     float _dt = 1.0f; ///< Time step between poses (in index units)

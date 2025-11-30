@@ -18,7 +18,7 @@ class ConfigPanel {
     void set_ui_state(UIState::SharedPtr ui_state) { _ui_state = std::move(ui_state); }
 
     /// Render the panel. Returns true if any configuration changed.
-    bool render(float& dt, simulation::SimulationConfig& sim_config, sensors::Camera2D& camera, sensors::IMU2D& imu);
+    bool render(float& dt, simulation::SimulationConfig& sim_config, std::shared_ptr<sensors::Camera2D> camera, std::shared_ptr<sensors::IMU2D> imu);
 
   private:
     UIState::SharedPtr _ui_state;

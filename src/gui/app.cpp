@@ -12,7 +12,7 @@
 namespace gui {
 using namespace gui::widgets;
 
-App::App() : _ui_state(std::make_shared<UIState>()) {
+App::App() : _camera(std::make_shared<sensors::Camera2D>()), _imu(std::make_shared<sensors::IMU2D>()), _ui_state(std::make_shared<UIState>()) {
     _config_panel.set_ui_state(_ui_state);
     _world_editor_panel.set_ui_state(_ui_state);
     _measurements_panel.set_ui_state(_ui_state);
@@ -21,15 +21,15 @@ App::App() : _ui_state(std::make_shared<UIState>()) {
 }
 
 void App::startup() {
-    _camera.set_intrinsics(100, 60.0f * core::DEG_TO_RAD);
-    _camera.set_noise_std(1.0f);
-    _imu.set_acc_bias(Eigen::Vector2f(0.0f, 0.0f));
-    _imu.set_gyr_bias(0.0f);
-    _imu.set_acc_noise_std(Eigen::Vector2f(0.01f, 0.01f));
-    _imu.set_gyr_noise_std(0.001f);
+    _camera->set_intrinsics(100, 60.0f * core::DEG_TO_RAD);
+    _camera->set_noise_std(1.0f);
+    _imu->set_acc_bias(Eigen::Vector2f(0.0f, 0.0f));
+    _imu->set_gyr_bias(0.0f);
+    _imu->set_acc_noise_std(Eigen::Vector2f(0.01f, 0.01f));
+    _imu->set_gyr_noise_std(0.001f);
 
     // Setup IMU integrator
-    _imu_integrator.set_imu_model(&_imu);
+    _imu_integrator.set_imu_model(_imu);
     _imu_integrator.set_gravity(_sim_config.gravity);
     _imu_integrator.set_process_noise(0.01f, 0.001f);
 

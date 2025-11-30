@@ -8,7 +8,8 @@
 
 namespace gui {
 
-bool ConfigPanel::render(float& dt, simulation::SimulationConfig& sim_config, sensors::Camera2D& camera, sensors::IMU2D& imu) {
+bool ConfigPanel::render(float& dt, simulation::SimulationConfig& sim_config, std::shared_ptr<sensors::Camera2D> camera,
+                         std::shared_ptr<sensors::IMU2D> imu) {
     bool updated = false;
     ImGui::PushItemWidth(100);
 
@@ -22,42 +23,42 @@ bool ConfigPanel::render(float& dt, simulation::SimulationConfig& sim_config, se
     ImGui::Spacing();
 
     widgets::BoldText("Camera Config");
-    int cam_width = camera.width();
-    float cam_fov_deg = camera.fov() * core::RAD_TO_DEG;
-    float cam_noise_std = camera.noise_std();
+    int cam_width = camera->width();
+    float cam_fov_deg = camera->fov() * core::RAD_TO_DEG;
+    float cam_noise_std = camera->noise_std();
     if (ImGui::DragInt("Width (px)", &cam_width)) {
-        camera.set_width(cam_width);
+        camera->set_width(cam_width);
         updated = true;
     }
     if (ImGui::DragFloat("FOV (deg)", &cam_fov_deg)) {
-        camera.set_fov(cam_fov_deg * core::DEG_TO_RAD);
+        camera->set_fov(cam_fov_deg * core::DEG_TO_RAD);
         updated = true;
     }
     if (ImGui::DragFloat("Camera noise std", &cam_noise_std, 0.1f, 0.0f, 10.0f)) {
-        camera.set_noise_std(cam_noise_std);
+        camera->set_noise_std(cam_noise_std);
         updated = true;
     }
     ImGui::Spacing();
 
     widgets::BoldText("IMU Config");
-    Eigen::Vector2f acc_bias = imu.acc_bias();
-    Eigen::Vector2f acc_noise_std = imu.acc_noise_std();
-    float gyr_bias = imu.gyr_bias();
-    float gyr_noise_std = imu.gyr_noise_std();
+    Eigen::Vector2f acc_bias = imu->acc_bias();
+    Eigen::Vector2f acc_noise_std = imu->acc_noise_std();
+    float gyr_bias = imu->gyr_bias();
+    float gyr_noise_std = imu->gyr_noise_std();
     if (ImGui::DragFloat2("Accel bias", acc_bias.data(), 0.01f, -1.0f, 1.0f)) {
-        imu.set_acc_bias(acc_bias);
+        imu->set_acc_bias(acc_bias);
         updated = true;
     }
     if (ImGui::DragFloat2("Accel noise std", acc_noise_std.data(), 0.001f, 0.0f, 1.0f)) {
-        imu.set_acc_noise_std(acc_noise_std);
+        imu->set_acc_noise_std(acc_noise_std);
         updated = true;
     }
     if (ImGui::DragFloat("Gyro bias", &gyr_bias, 0.001f, -0.1f, 0.1f)) {
-        imu.set_gyr_bias(gyr_bias);
+        imu->set_gyr_bias(gyr_bias);
         updated = true;
     }
     if (ImGui::DragFloat("Gyro noise std", &gyr_noise_std, 0.0001f, 0.0f, 0.1f)) {
-        imu.set_gyr_noise_std(gyr_noise_std);
+        imu->set_gyr_noise_std(gyr_noise_std);
         updated = true;
     }
 

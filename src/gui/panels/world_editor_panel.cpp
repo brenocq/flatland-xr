@@ -164,7 +164,7 @@ void build_wall_from_raw_points(std::vector<core::Wall>& walls, const std::vecto
 
 bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::Vector3f>& gt_pose_raw, core::Trajectory2D& gt_trajectory,
                               std::vector<Eigen::Vector2f>& landmarks, std::vector<core::Wall>& walls, std::vector<Eigen::Vector2f>& wall_raw_points,
-                              const sensors::Camera2D& camera) {
+                              const std::shared_ptr<sensors::Camera2D> camera) {
     bool world_changed = false;
 
     // World preset selector
@@ -380,13 +380,13 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
             std::vector<sensors::CameraMeasurement> observations;
             for (size_t i = 0; i < landmarks.size(); i++) {
                 if (!simulation::is_landmark_occluded(pos, landmarks[i], walls)) {
-                    auto u = camera.project(pose, landmarks[i]);
+                    auto u = camera->project(pose, landmarks[i]);
                     if (u.has_value()) {
                         observations.emplace_back(u.value(), i);
                     }
                 }
             }
-            plot_2d_camera_frustum("##DrawingCamera", pos, pose.z(), camera.fov(), 1.0f, Color::CatBlue());
+            plot_2d_camera_frustum("##DrawingCamera", pos, pose.z(), camera->fov(), 1.0f, Color::CatBlue());
             plot_2d_camera_rays("##DrawingRays", pos, landmarks, observations, 1.0f);
             plot_2d_camera_observations("##DrawingObs", pos, pose.z(), camera, observations);
         } else {
@@ -402,12 +402,12 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
                         // Check wall occlusion before projecting
                         if (simulation::is_landmark_occluded(pos, landmarks[closest_landmark], walls))
                             continue;
-                        auto u = camera.project(pose, landmarks[closest_landmark]);
+                        auto u = camera->project(pose, landmarks[closest_landmark]);
                         if (u.has_value()) {
                             obs_count++;
                             // Only show observation for the hovered landmark
                             std::vector<sensors::CameraMeasurement> single_obs = {{u.value(), static_cast<size_t>(closest_landmark)}};
-                            plot_2d_camera_frustum("##LandmarkHoverCamera", pos, pose.z(), camera.fov(), 1.0f, Color::CatBlue());
+                            plot_2d_camera_frustum("##LandmarkHoverCamera", pos, pose.z(), camera->fov(), 1.0f, Color::CatBlue());
                             plot_2d_camera_rays("##LandmarkHoverRays", pos, landmarks, single_obs, 1.0f);
                             plot_2d_camera_observations("##LandmarkHoverObs", pos, pose.z(), camera, single_obs);
                         }
@@ -422,7 +422,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
                 std::vector<sensors::CameraMeasurement> observations;
                 for (size_t i = 0; i < landmarks.size(); i++) {
                     if (!simulation::is_landmark_occluded(pos, landmarks[i], walls)) {
-                        auto u = camera.project(pose, landmarks[i]);
+                        auto u = camera->project(pose, landmarks[i]);
                         if (u.has_value()) {
                             observations.emplace_back(u.value(), i);
                         }
@@ -430,7 +430,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
                 }
                 ImGui::SetTooltip("GT Pose %d\nPos: (%.2f, %.2f)\nOrientation: %.2f°\nObservations: %zu", closest_gt, pose.x(), pose.y(),
                                   pose.z() * core::RAD_TO_DEG, observations.size());
-                plot_2d_camera_frustum("##HoverCamera", pos, pose.z(), camera.fov(), 1.0f, Color::CatBlue());
+                plot_2d_camera_frustum("##HoverCamera", pos, pose.z(), camera->fov(), 1.0f, Color::CatBlue());
                 plot_2d_camera_rays("##HoverRays", pos, landmarks, observations, 1.0f);
                 plot_2d_camera_observations("##HoverObs", pos, pose.z(), camera, observations);
             }

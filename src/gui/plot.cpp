@@ -7,6 +7,7 @@
 #include <core/math.hpp>
 #include <core/trajectory2d.hpp>
 #include <gui/plot.hpp>
+#include <memory>
 #include <sensors/camera2d.hpp>
 
 namespace gui {
@@ -120,14 +121,14 @@ void plot_2d_trajectory(const std::string& label, const core::Trajectory2D& traj
     plot_2d_scatter(label, pose_positions, color, scatter_size);
 }
 
-void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f& position, float orientation, const sensors::Camera2D& camera,
-                                 const std::vector<sensors::CameraMeasurement>& observations) {
+void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f& position, float orientation,
+                                 const std::shared_ptr<sensors::Camera2D> camera, const std::vector<sensors::CameraMeasurement>& observations) {
     if (observations.empty())
         return;
 
     // Use 1 unit distance for visualization
     constexpr float vis_distance = 1.0f;
-    float fov = camera.fov();
+    float fov = camera->fov();
     float half_fov = fov / 2.0f;
     float half_width = vis_distance * std::tan(half_fov);
 
@@ -142,7 +143,7 @@ void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f
 
     // Draw each observation with its landmark color
     for (const auto& obs : observations) {
-        float t = obs.u / static_cast<float>(camera.width());
+        float t = obs.u / static_cast<float>(camera->width());
         Eigen::Vector2f point = left_corner + (right_corner - left_corner) * t;
 
         Color color = Color::Random(obs.landmark_id);

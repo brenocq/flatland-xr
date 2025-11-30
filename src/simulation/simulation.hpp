@@ -6,6 +6,7 @@
 #include <Eigen/Dense>
 #include <core/trajectory2d.hpp>
 #include <core/types.hpp>
+#include <memory>
 #include <sensors/camera2d.hpp>
 #include <sensors/imu2d.hpp>
 #include <vector>
@@ -55,6 +56,6 @@ bool is_landmark_occluded(const Eigen::Vector2f& camera_pos, const Eigen::Vector
 /// @param config Simulation configuration
 /// @return Simulation result with ground truth and measurements
 SimulationResult run(const core::Trajectory2D& trajectory, const std::vector<Eigen::Vector2f>& landmarks, const std::vector<core::Wall>& walls,
-                     sensors::Camera2D& camera, sensors::IMU2D& imu, const SimulationConfig& config = {});
+                     std::shared_ptr<sensors::Camera2D> camera, std::shared_ptr<sensors::IMU2D> imu, const SimulationConfig& config = {});
 
 } // namespace simulation
