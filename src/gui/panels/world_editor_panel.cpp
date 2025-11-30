@@ -3,7 +3,7 @@
 
 #include "imgui.h"
 #include "implot.h"
-#include <core/math_constants.hpp>
+#include <core/math.hpp>
 #include <gui/color.hpp>
 #include <gui/panels/world_editor_panel.hpp>
 #include <gui/plot.hpp>
@@ -47,7 +47,7 @@ void build_trajectory_from_raw_poses(const std::vector<Eigen::Vector3f>& gt_pose
             float dx = avg_x - smoothed_poses.back().x();
             float dy = avg_y - smoothed_poses.back().y();
             if (dx != 0 || dy != 0) {
-                orientation = std::atan2f(dy, dx);
+                orientation = std::atan2(dy, dx);
             } else {
                 orientation = smoothed_poses.back().z();
             }
@@ -74,7 +74,7 @@ void build_trajectory_from_raw_poses(const std::vector<Eigen::Vector3f>& gt_pose
         float dx = subsampled[i].x() - subsampled[i - 1].x();
         float dy = subsampled[i].y() - subsampled[i - 1].y();
         if (dx != 0 || dy != 0) {
-            subsampled[i].z() = std::atan2f(dy, dx);
+            subsampled[i].z() = std::atan2(dy, dx);
         }
     }
     if (subsampled.size() > 1) {
@@ -227,8 +227,8 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
 
                 if (this->_trajectory_drag_started && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
                     ImVec2 current_pos = ImGui::GetMousePos();
-                    float drag_dist = std::sqrtf(std::powf(current_pos.x - this->_trajectory_drag_start_pos.x, 2) +
-                                                 std::powf(current_pos.y - this->_trajectory_drag_start_pos.y, 2));
+                    float drag_dist = core::distance(current_pos.x - this->_trajectory_drag_start_pos.x,
+                                                     current_pos.y - this->_trajectory_drag_start_pos.y);
 
                     // If dragged more than threshold, switch to trajectory drawing mode
                     if (drag_dist > 5.0f) {
@@ -245,7 +245,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
                             ImPlotPoint last_plot(gt_pose_raw.back().x(), gt_pose_raw.back().y());
                             ImVec2 last_px = ImPlot::PlotToPixels(last_plot);
                             ImVec2 mouse_px = ImPlot::PlotToPixels(mouse);
-                            float dist = std::sqrtf(std::powf(mouse_px.x - last_px.x, 2) + std::powf(mouse_px.y - last_px.y, 2));
+                            float dist = core::distance(mouse_px.x - last_px.x, mouse_px.y - last_px.y);
                             should_add = dist > 1.0f;
                         }
                         if (should_add) {
@@ -255,7 +255,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
                                 Eigen::Vector2f prev(gt_pose_raw.back().x(), gt_pose_raw.back().y());
                                 Eigen::Vector2f curr(mouse.x, mouse.y);
                                 Eigen::Vector2f dir = curr - prev;
-                                orientation = std::atan2f(dir.y(), dir.x());
+                                orientation = std::atan2(dir.y(), dir.x());
                             }
                             gt_pose_raw.emplace_back(static_cast<float>(mouse.x), static_cast<float>(mouse.y), orientation);
                             // Rebuild trajectory while drawing for live preview
@@ -267,8 +267,8 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
                 // On release, if we didn't drag much, add a landmark
                 if (this->_landmark_click_started && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
                     ImVec2 current_pos = ImGui::GetMousePos();
-                    float dist = std::sqrtf(std::powf(current_pos.x - this->_landmark_click_start_pos.x, 2) +
-                                            std::powf(current_pos.y - this->_landmark_click_start_pos.y, 2));
+                    float dist = core::distance(current_pos.x - this->_landmark_click_start_pos.x,
+                                               current_pos.y - this->_landmark_click_start_pos.y);
                     if (dist < 5.0f) {
                         landmarks.emplace_back(static_cast<float>(mouse.x), static_cast<float>(mouse.y));
                         current_preset = world::Preset::Custom;
@@ -301,8 +301,8 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
 
                 if (this->_wall_drag_started && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
                     ImVec2 current_pos = ImGui::GetMousePos();
-                    float drag_dist = std::sqrtf(std::powf(current_pos.x - this->_wall_drag_start_pos.x, 2) +
-                                                 std::powf(current_pos.y - this->_wall_drag_start_pos.y, 2));
+                    float drag_dist = core::distance(current_pos.x - this->_wall_drag_start_pos.x,
+                                                     current_pos.y - this->_wall_drag_start_pos.y);
 
                     if (drag_dist > 3.0f) {
                         // Start a new wall if this is the first point
@@ -316,7 +316,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
                             ImPlotPoint last_plot(wall_raw_points.back().x(), wall_raw_points.back().y());
                             ImVec2 last_px = ImPlot::PlotToPixels(last_plot);
                             ImVec2 mouse_px_check = ImPlot::PlotToPixels(mouse);
-                            float dist = std::sqrtf(std::powf(mouse_px_check.x - last_px.x, 2) + std::powf(mouse_px_check.y - last_px.y, 2));
+                            float dist = core::distance(mouse_px_check.x - last_px.x, mouse_px_check.y - last_px.y);
                             should_add = dist > 1.0f;
                         }
                         if (should_add) {
@@ -335,7 +335,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
 
             for (size_t i = 0; i < landmarks.size(); i++) {
                 ImVec2 lm_px = ImPlot::PlotToPixels(ImPlotPoint(landmarks[i].x(), landmarks[i].y()));
-                float dist = std::sqrtf(std::powf(mouse_px.x - lm_px.x, 2) + std::powf(mouse_px.y - lm_px.y, 2));
+                float dist = core::distance(mouse_px.x - lm_px.x, mouse_px.y - lm_px.y);
                 if (dist < closest_dist) {
                     closest_dist = dist;
                     closest_landmark = static_cast<int>(i);
@@ -348,7 +348,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
                 for (size_t i = 0; i < gt_trajectory.num_poses(); i++) {
                     Eigen::Vector2f pos = gt_trajectory.position(static_cast<float>(i));
                     ImVec2 gt_px = ImPlot::PlotToPixels(ImPlotPoint(pos.x(), pos.y()));
-                    float dist = std::sqrtf(std::powf(mouse_px.x - gt_px.x, 2) + std::powf(mouse_px.y - gt_px.y, 2));
+                    float dist = core::distance(mouse_px.x - gt_px.x, mouse_px.y - gt_px.y);
                     if (dist < closest_dist) {
                         closest_dist = dist;
                         closest_gt = static_cast<int>(i);
@@ -443,7 +443,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
 
                 // Check if mouse is hovering this landmark for context menu
                 ImVec2 lm_px = ImPlot::PlotToPixels(ImPlotPoint(x, y));
-                float dist = std::sqrtf(std::powf(mouse_px.x - lm_px.x, 2) + std::powf(mouse_px.y - lm_px.y, 2));
+                float dist = core::distance(mouse_px.x - lm_px.x, mouse_px.y - lm_px.y);
                 if (dist < 10.0f) {
                     if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
                         ImGui::OpenPopup(("LandmarkContext" + std::to_string(i)).c_str());
@@ -487,7 +487,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
                         }
                         float closest_x = p1_px.x + t * dx;
                         float closest_y = p1_px.y + t * dy;
-                        float dist = std::sqrtf(std::powf(mouse_px.x - closest_x, 2) + std::powf(mouse_px.y - closest_y, 2));
+                        float dist = core::distance(mouse_px.x - closest_x, mouse_px.y - closest_y);
 
                         if (dist < 10.0f && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
                             ImGui::OpenPopup(("WallContext" + std::to_string(w)).c_str());

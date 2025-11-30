@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include <cmath>
-#include <core/math_constants.hpp>
+#include <core/math.hpp>
 #include <core/trajectory2d.hpp>
 #include <gtest/gtest.h>
 

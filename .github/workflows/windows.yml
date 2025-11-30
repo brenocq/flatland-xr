@@ -32,12 +32,12 @@ jobs:
 
       - name: Configure CMake (MSVC)
         if: matrix.compiler.name == 'MSVC'
-        run: cmake -B build -DCMAKE_CXX_FLAGS="/W4 /WX"
+        run: cmake -B build -DFLATLAND_XR_STRICT_WARNINGS=ON
 
       - name: Configure CMake (MinGW)
         if: matrix.compiler.name == 'MinGW'
         shell: msys2 {0}
-        run: cmake -B build -G Ninja -DCMAKE_CXX_FLAGS="-Wall -Werror"
+        run: cmake -B build -G Ninja -DFLATLAND_XR_STRICT_WARNINGS=ON
 
       - name: Build (MSVC)
         if: matrix.compiler.name == 'MSVC'

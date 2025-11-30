@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include "imgui.h"
-#include <core/math_constants.hpp>
+#include <core/math.hpp>
 #include <gui/panels/config_panel.hpp>
 
 namespace gui {

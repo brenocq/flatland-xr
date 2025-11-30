@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include "world.hpp"
-#include "core/math_constants.hpp"
+#include "core/math.hpp"
 #include <cmath>
 
 namespace world {
@@ -24,7 +24,7 @@ void create_polygon(World& world, Eigen::Vector2f center, float size, int sides,
     std::vector<Eigen::Vector2f> vertices;
     for (int i = 0; i < sides; ++i) {
         float angle = rotation + static_cast<float>(i) * core::TWO_PI / static_cast<float>(sides);
-        vertices.emplace_back(center + Eigen::Vector2f(size * std::cosf(angle), size * std::sinf(angle)));
+        vertices.emplace_back(center + Eigen::Vector2f(size * std::cos(angle), size * std::sin(angle)));
     }
     // Create walls
     for (int i = 0; i < sides; ++i) {
@@ -42,7 +42,7 @@ void create_polygon(World& world, Eigen::Vector2f center, float size, int sides,
 
 /// Helper to create a line (wife/daughter in Flatland) as a wall with landmarks at ends
 void create_line(World& world, Eigen::Vector2f center, float length, float angle, float landmark_offset = 0.15f) {
-    Eigen::Vector2f dir(std::cosf(angle), std::sinf(angle));
+    Eigen::Vector2f dir(std::cos(angle), std::sin(angle));
     Eigen::Vector2f p1 = center - dir * (length / 2.0f);
     Eigen::Vector2f p2 = center + dir * (length / 2.0f);
     core::Wall wall;
@@ -59,7 +59,7 @@ void create_circle(World& world, Eigen::Vector2f center, float radius, int segme
     std::vector<Eigen::Vector2f> vertices;
     for (int i = 0; i < segments; ++i) {
         float angle = static_cast<float>(i) * core::TWO_PI / static_cast<float>(segments);
-        vertices.emplace_back(center + Eigen::Vector2f(radius * std::cosf(angle), radius * std::sinf(angle)));
+        vertices.emplace_back(center + Eigen::Vector2f(radius * std::cos(angle), radius * std::sin(angle)));
     }
     // Create walls
     for (int i = 0; i < segments; ++i) {
@@ -71,7 +71,7 @@ void create_circle(World& world, Eigen::Vector2f center, float radius, int segme
     // Add landmarks at cardinal points only (to avoid too many)
     for (int i = 0; i < 4; ++i) {
         float angle = static_cast<float>(i) * core::HALF_PI;
-        Eigen::Vector2f dir(std::cosf(angle), std::sinf(angle));
+        Eigen::Vector2f dir(std::cos(angle), std::sin(angle));
         world.landmarks.emplace_back(center + dir * (radius + landmark_offset));
     }
 }
@@ -84,7 +84,7 @@ World load_a_squares_house() {
     std::vector<Eigen::Vector2f> pentagon;
     for (int i = 0; i < 5; ++i) {
         float angle = core::HALF_PI + static_cast<float>(i) * core::TWO_PI / 5.0f; // Start from top
-        pentagon.emplace_back(house_radius * std::cosf(angle), house_radius * std::sinf(angle));
+        pentagon.emplace_back(house_radius * std::cos(angle), house_radius * std::sin(angle));
     }
     for (int i = 0; i < 5; ++i) {
         core::Wall wall;
@@ -178,7 +178,7 @@ World load_hall_of_council() {
     std::vector<Eigen::Vector2f> hall;
     for (int i = 0; i < sides; ++i) {
         float angle = static_cast<float>(i) * core::TWO_PI / static_cast<float>(sides);
-        hall.emplace_back(outer_radius * std::cosf(angle), outer_radius * std::sinf(angle));
+        hall.emplace_back(outer_radius * std::cos(angle), outer_radius * std::sin(angle));
     }
     for (int i = 0; i < sides; ++i) {
         core::Wall wall;
@@ -192,7 +192,7 @@ World load_hall_of_council() {
     std::vector<Eigen::Vector2f> podium;
     for (int i = 0; i < 6; ++i) {
         float angle = core::PI / 6.0f + static_cast<float>(i) * core::TWO_PI / 6.0f;
-        podium.emplace_back(inner_radius * std::cosf(angle), inner_radius * std::sinf(angle));
+        podium.emplace_back(inner_radius * std::cos(angle), inner_radius * std::sin(angle));
     }
     for (int i = 0; i < 6; ++i) {
         core::Wall wall;
@@ -267,7 +267,7 @@ std::vector<Eigen::Vector3f> interpolate_trajectory(const std::vector<Eigen::Vec
     for (size_t i = 0; i + 1 < keypoints.size(); ++i) {
         float dx = keypoints[i + 1].x() - keypoints[i].x();
         float dy = keypoints[i + 1].y() - keypoints[i].y();
-        float len = std::sqrtf(dx * dx + dy * dy);
+        float len = std::sqrt(dx * dx + dy * dy);
         segment_lengths.emplace_back(len);
         total_length += len;
     }
@@ -300,14 +300,14 @@ std::vector<Eigen::Vector3f> interpolate_trajectory(const std::vector<Eigen::Vec
             float dx = x - dense_poses.back().x();
             float dy = y - dense_poses.back().y();
             if (dx != 0 || dy != 0) {
-                orientation = std::atan2f(dy, dx);
+                orientation = std::atan2(dy, dx);
             } else {
                 orientation = dense_poses.back().z();
             }
         } else if (keypoints.size() > 1) {
             float dx = keypoints[1].x() - keypoints[0].x();
             float dy = keypoints[1].y() - keypoints[0].y();
-            orientation = std::atan2f(dy, dx);
+            orientation = std::atan2(dy, dx);
         }
 
         dense_poses.emplace_back(x, y, orientation);

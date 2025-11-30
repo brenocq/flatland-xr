@@ -75,8 +75,8 @@ SimulationResult run(const core::Trajectory2D& trajectory, const std::vector<Eig
         Eigen::Vector2f specific_force = world_acc - config.gravity;
 
         // Rotate to body frame
-        float cos_t = std::cosf(theta);
-        float sin_t = std::sinf(theta);
+        float cos_t = std::cos(theta);
+        float sin_t = std::sin(theta);
         Eigen::Matrix2f R_wb; // World to body rotation
         R_wb << cos_t, sin_t, -sin_t, cos_t;
         Eigen::Vector2f body_acc = R_wb * specific_force;

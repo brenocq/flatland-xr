@@ -4,7 +4,7 @@
 #include "imgui.h"
 #include "implot.h"
 
-#include <core/math_constants.hpp>
+#include <core/math.hpp>
 #include <gui/app.hpp>
 
 namespace gui {

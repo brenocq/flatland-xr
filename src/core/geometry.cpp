@@ -3,7 +3,7 @@
 
 #include <cmath>
 #include <core/geometry.hpp>
-#include <core/math_constants.hpp>
+#include <core/math.hpp>
 
 namespace core {
 

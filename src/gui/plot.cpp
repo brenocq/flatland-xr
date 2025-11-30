@@ -3,7 +3,7 @@
 
 #include "implot.h"
 #include <cmath>
-#include <core/math_constants.hpp>
+#include <core/math.hpp>
 #include <core/trajectory2d.hpp>
 #include <gui/plot.hpp>
 #include <sensors/camera2d.hpp>
@@ -34,11 +34,11 @@ void plot_2d_camera_frustum(const std::string& label, const Eigen::Vector2f& pos
                             const Color& color, float weight) {
     // Calculate the image plane corners
     float half_fov = fov / 2.0f;
-    float half_width = focal_length * std::tanf(half_fov);
+    float half_width = focal_length * std::tan(half_fov);
 
     // Direction vectors
-    Eigen::Vector2f forward(std::cosf(orientation), std::sinf(orientation));
-    Eigen::Vector2f right(std::cosf(orientation - core::HALF_PI), std::sinf(orientation - core::HALF_PI));
+    Eigen::Vector2f forward(std::cos(orientation), std::sin(orientation));
+    Eigen::Vector2f right(std::cos(orientation - core::HALF_PI), std::sin(orientation - core::HALF_PI));
 
     // Image plane center
     Eigen::Vector2f plane_center = position + forward * focal_length;
@@ -86,7 +86,7 @@ void plot_2d_trajectory(const std::string& label, const core::Trajectory2D& traj
         float t = max_t * static_cast<float>(i) / static_cast<float>(coarse_samples);
         Eigen::Vector2f pos = trajectory.position(t);
         ImVec2 curr_px = ImPlot::PlotToPixels(ImPlotPoint(pos.x(), pos.y()));
-        total_px_length += std::sqrtf(std::powf(curr_px.x - prev_px.x, 2) + std::powf(curr_px.y - prev_px.y, 2));
+        total_px_length += core::distance(curr_px.x - prev_px.x, curr_px.y - prev_px.y);
         prev_px = curr_px;
     }
 
@@ -125,11 +125,11 @@ void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f
     constexpr float vis_distance = 1.0f;
     float fov = camera.fov();
     float half_fov = fov / 2.0f;
-    float half_width = vis_distance * std::tanf(half_fov);
+    float half_width = vis_distance * std::tan(half_fov);
 
     // Direction vectors
-    Eigen::Vector2f forward(std::cosf(orientation), std::sinf(orientation));
-    Eigen::Vector2f right(std::cosf(orientation - core::HALF_PI), std::sinf(orientation - core::HALF_PI));
+    Eigen::Vector2f forward(std::cos(orientation), std::sin(orientation));
+    Eigen::Vector2f right(std::cos(orientation - core::HALF_PI), std::sin(orientation - core::HALF_PI));
 
     // Image plane center and corners (1 unit away)
     Eigen::Vector2f plane_center = position + forward * vis_distance;

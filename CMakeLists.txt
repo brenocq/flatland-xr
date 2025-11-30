@@ -3,6 +3,7 @@ project(flatland-xr LANGUAGES CXX C)
 
 # Options
 option(FLATLAND_XR_BUILD_TESTS "Build unit tests" ON)
+option(FLATLAND_XR_STRICT_WARNINGS "Enable strict compiler warnings and treat as errors" OFF)
 
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -80,10 +81,16 @@ target_link_libraries(implot PUBLIC imgui)
 # ============================================================================
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-# Core library
-add_library(flatland-core STATIC ${SRC_DIR}/core/geometry.cpp ${SRC_DIR}/core/trajectory2d.cpp)
-target_include_directories(flatland-core PUBLIC ${SRC_DIR})
-target_link_libraries(flatland-core PUBLIC Eigen3::Eigen)
+# Function to apply strict warnings to a target
+function(flatland_xr_target_strict_warnings target)
+    if(FLATLAND_XR_STRICT_WARNINGS)
+        if(MSVC)
+            target_compile_options(${target} PRIVATE /W4 /WX)
+        else()
+            target_compile_options(${target} PRIVATE -Wall -Wextra -Werror)
+        endif()
+    endif()
+endfunction()
 
 # MSVC-specific settings
 if(MSVC)
@@ -93,25 +100,35 @@ if(MSVC)
     add_compile_options(/external:anglebrackets /external:W0)
 endif()
 
+# Core library
+add_library(flatland-core STATIC ${SRC_DIR}/core/geometry.cpp ${SRC_DIR}/core/trajectory2d.cpp)
+target_include_directories(flatland-core PUBLIC ${SRC_DIR})
+target_link_libraries(flatland-core PUBLIC Eigen3::Eigen)
+flatland_xr_target_strict_warnings(flatland-core)
+
 # Sensors library
 add_library(flatland-sensors STATIC ${SRC_DIR}/sensors/camera2d.cpp ${SRC_DIR}/sensors/imu2d.cpp)
 target_include_directories(flatland-sensors PUBLIC ${SRC_DIR})
 target_link_libraries(flatland-sensors PUBLIC flatland-core)
+flatland_xr_target_strict_warnings(flatland-sensors)
 
 # World library
 add_library(flatland-world STATIC ${SRC_DIR}/world/world.cpp)
 target_include_directories(flatland-world PUBLIC ${SRC_DIR})
 target_link_libraries(flatland-world PUBLIC flatland-core)
+flatland_xr_target_strict_warnings(flatland-world)
 
 # Simulation library
 add_library(flatland-simulation STATIC ${SRC_DIR}/simulation/simulation.cpp)
 target_include_directories(flatland-simulation PUBLIC ${SRC_DIR})
 target_link_libraries(flatland-simulation PUBLIC flatland-core flatland-sensors flatland-world)
+flatland_xr_target_strict_warnings(flatland-simulation)
 
 # Estimation library
 add_library(flatland-estimation STATIC ${SRC_DIR}/estimation/imu_integrator.cpp)
 target_include_directories(flatland-estimation PUBLIC ${SRC_DIR})
 target_link_libraries(flatland-estimation PUBLIC flatland-core flatland-sensors)
+flatland_xr_target_strict_warnings(flatland-estimation)
 
 # GUI library (depends on ImGui/ImPlot)
 add_library(
@@ -128,12 +145,14 @@ add_library(
 )
 target_include_directories(flatland-gui PUBLIC ${SRC_DIR})
 target_link_libraries(flatland-gui PUBLIC flatland-simulation flatland-estimation implot)
+flatland_xr_target_strict_warnings(flatland-gui)
 
 # ============================================================================
 # Main Executable
 # ============================================================================
 add_executable(flatland-xr ${SRC_DIR}/main.cpp)
 target_link_libraries(flatland-xr PRIVATE flatland-gui)
+flatland_xr_target_strict_warnings(flatland-xr)
 
 # Silence OpenGL deprecation warnings on macOS
 if(APPLE)
@@ -172,6 +191,7 @@ if(FLATLAND_XR_BUILD_TESTS)
     target_link_libraries(
         flatland-tests PRIVATE flatland-core flatland-sensors flatland-world flatland-simulation flatland-estimation GTest::gtest_main
     )
+    flatland_xr_target_strict_warnings(flatland-tests)
 
     include(GoogleTest)
     gtest_discover_tests(flatland-tests)

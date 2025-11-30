@@ -42,8 +42,8 @@ std::optional<float> Camera2D::project(const Eigen::Vector3f& pose, const Eigen:
     Eigen::Vector2f to_landmark = landmark - cam_pos;
 
     // Build rotation matrix (world to camera)
-    float cos_a = std::cosf(cam_angle);
-    float sin_a = std::sinf(cam_angle);
+    float cos_a = std::cos(cam_angle);
+    float sin_a = std::sin(cam_angle);
     Eigen::Matrix2f R_wc;
     R_wc << cos_a, sin_a, -sin_a, cos_a;
 
