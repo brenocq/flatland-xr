@@ -137,7 +137,9 @@ TEST_F(Trajectory2DTest, OrientationNormalized) {
     traj.build(poses);
 
     float theta = traj.orientation(0.5f);
-    EXPECT_TRUE(theta >= -M_PI && theta <= M_PI);
+    // Use small epsilon for floating-point comparison
+    constexpr float epsilon = 1e-5f;
+    EXPECT_TRUE(theta >= -core::PI - epsilon && theta <= core::PI + epsilon);
 }
 
 // ============================================================================
