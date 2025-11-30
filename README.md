@@ -4,6 +4,12 @@
  <img width="150" src="https://github.com/user-attachments/assets/948be9e2-f2f2-43d5-b114-468c9c3752e9"/>
 </div>
 
+<div align="center">
+  <img src="https://github.com/brenocq/flatland-xr/actions/workflows/linux.yml/badge.svg" alt="🐧 Linux"/>
+  <img src="https://github.com/brenocq/flatland-xr/actions/workflows/macos.yml/badge.svg" alt="🍎 MacOS"/>
+  <img src="https://github.com/brenocq/flatland-xr/actions/workflows/windows.yml/badge.svg" alt="🪟 Windows"/>
+</div>
+
 ## 📖 Introduction
 
 **Welcome to the Spatial Computing revolution... for A. Square.**
