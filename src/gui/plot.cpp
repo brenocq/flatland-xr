@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
+#include "imconfig.h"
 #include "implot.h"
 #include <cmath>
 #include <core/math.hpp>
@@ -86,7 +87,7 @@ void plot_2d_trajectory(const std::string& label, const core::Trajectory2D& traj
         float t = max_t * static_cast<float>(i) / static_cast<float>(coarse_samples);
         Eigen::Vector2f pos = trajectory.position(t);
         ImVec2 curr_px = ImPlot::PlotToPixels(ImPlotPoint(pos.x(), pos.y()));
-        total_px_length += core::distance(curr_px.x - prev_px.x, curr_px.y - prev_px.y);
+        total_px_length += curr_px.distance(prev_px);
         prev_px = curr_px;
     }
 

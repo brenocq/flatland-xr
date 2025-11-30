@@ -60,7 +60,8 @@ set(IMGUI_SOURCE
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 add_library(imgui STATIC ${IMGUI_SOURCE})
-target_include_directories(imgui PUBLIC "${imgui_SOURCE_DIR};${imgui_SOURCE_DIR}/backends/")
+target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src;${imgui_SOURCE_DIR};${imgui_SOURCE_DIR}/backends/")
+target_compile_definitions(imgui PUBLIC IMGUI_USER_CONFIG="thirdparty/imconfig_flatland.h")
 target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
 
 # Setup ImPlot
