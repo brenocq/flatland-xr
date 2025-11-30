@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
-#include "error_metrics_panel.hpp"
 #include "imgui.h"
+#include <gui/panels/error_metrics_panel.hpp>
 
 namespace gui {
 

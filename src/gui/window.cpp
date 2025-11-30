@@ -17,10 +17,10 @@
 
 namespace gui {
 
-Window::Window(const std::string& name, size_t width, size_t height) : _name(name), _width(width), _height(height), _window(nullptr) {}
+Window::Window(const std::string& name, size_t width, size_t height) : _name(name), _width(width), _height(height) {}
 
 // Callback to handle GLFW errors
-void glfw_error_callback(int error, const char* description) { std::cerr << "GLFW Error " << error << ": " << description << std::endl; }
+void glfw_error_callback(int error, const char* description) { std::cerr << "GLFW Error " << error << ": " << description << '\n'; }
 
 bool Window::create() {
     // Setup error callback
@@ -28,7 +28,7 @@ bool Window::create() {
 
     // Initialize GLFW
     if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW" << std::endl;
+        std::cerr << "Failed to initialize GLFW\n";
         return false;
     }
 
@@ -48,9 +48,9 @@ bool Window::create() {
 #endif
 
     // Create window
-    _window = glfwCreateWindow(_width, _height, _name.c_str(), nullptr, nullptr);
+    _window = glfwCreateWindow(static_cast<int>(_width), static_cast<int>(_height), _name.c_str(), nullptr, nullptr);
     if (!_window) {
-        std::cerr << "Failed to create GLFW window" << std::endl;
+        std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();
         return false;
     }

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
-#include "config_panel.hpp"
 #include "imgui.h"
-#include <cmath>
+#include <core/math_constants.hpp>
+#include <gui/panels/config_panel.hpp>
 
 namespace gui {
 
@@ -24,14 +24,14 @@ bool ConfigPanel::render(float& dt, simulation::SimulationConfig& sim_config, se
 
         ImGui::Text("Camera Config");
         int cam_width = camera.width();
-        float cam_fov_deg = camera.fov() * 180.0f / M_PI;
+        float cam_fov_deg = camera.fov() * core::RAD_TO_DEG;
         float cam_noise_std = camera.noise_std();
         if (ImGui::DragInt("Width (px)", &cam_width)) {
             camera.set_width(cam_width);
             updated = true;
         }
         if (ImGui::DragFloat("FOV (deg)", &cam_fov_deg)) {
-            camera.set_fov(cam_fov_deg * M_PI / 180.0f);
+            camera.set_fov(cam_fov_deg * core::DEG_TO_RAD);
             updated = true;
         }
         if (ImGui::DragFloat("Camera noise std", &cam_noise_std, 0.1f, 0.0f, 10.0f)) {

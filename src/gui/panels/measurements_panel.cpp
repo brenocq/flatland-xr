@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
-#include "measurements_panel.hpp"
 #include "imgui.h"
 #include "implot.h"
 #include <gui/color.hpp>
+#include <gui/panels/measurements_panel.hpp>
 #include <map>
 
 namespace gui {
@@ -99,10 +99,10 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
             for (size_t t = 0; t < num_steps; t++) {
                 int time_idx = static_cast<int>(t);
                 for (const auto& obs : sim_result.gt_cam[t]) {
-                    gt_tracks[obs.landmark_id].push_back({time_idx, obs.u});
+                    gt_tracks[obs.landmark_id].emplace_back(time_idx, obs.u);
                 }
                 for (const auto& obs : sim_result.cam_measurements[t]) {
-                    meas_tracks[obs.landmark_id].push_back({time_idx, obs.u});
+                    meas_tracks[obs.landmark_id].emplace_back(time_idx, obs.u);
                 }
             }
 
@@ -174,8 +174,7 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
                 }
 
                 // Draw measurement segments (lines)
-                for (size_t seg_idx = 0; seg_idx < meas_segments.size(); seg_idx++) {
-                    const auto& seg = meas_segments[seg_idx];
+                for (const auto& seg : meas_segments) {
                     if (seg.size() >= 2) {
                         std::vector<float> seg_t, seg_u;
                         for (const auto& [t, u] : seg) {
@@ -183,12 +182,7 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
                             seg_u.push_back(u);
                         }
                         ImPlot::SetNextLineStyle(ImVec4(lm_color), 2.0f);
-                        // Only use visible label for first segment
-                        if (seg_idx == 0) {
-                            ImPlot::PlotLine(label.c_str(), seg_t.data(), seg_u.data(), static_cast<int>(seg_t.size()));
-                        } else {
-                            ImPlot::PlotLine(label.c_str(), seg_t.data(), seg_u.data(), static_cast<int>(seg_t.size()));
-                        }
+                        ImPlot::PlotLine(label.c_str(), seg_t.data(), seg_u.data(), static_cast<int>(seg_t.size()));
                     }
                 }
 

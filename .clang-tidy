@@ -6,7 +6,6 @@ Checks: >
   -*,
   bugprone-*,
   -bugprone-easily-swappable-parameters,
-  -bugprone-narrowing-conversions,
   clang-analyzer-*,
   cppcoreguidelines-*,
   -cppcoreguidelines-avoid-magic-numbers,
@@ -16,48 +15,45 @@ Checks: >
   -cppcoreguidelines-owning-memory,
   -cppcoreguidelines-non-private-member-variables-in-classes,
   -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-init-variables,
+  -cppcoreguidelines-pro-type-vararg,
   misc-*,
   -misc-non-private-member-variables-in-classes,
   -misc-no-recursion,
+  -misc-use-internal-linkage,
+  -misc-include-cleaner,
+  -misc-const-correctness,
   modernize-*,
   -modernize-use-trailing-return-type,
   -modernize-avoid-c-arrays,
+  -modernize-use-nodiscard,
+  -modernize-use-noexcept,
+  -modernize-return-braced-init-list,
+  -modernize-pass-by-value,
+  -modernize-use-auto,
+  -modernize-loop-convert,
   performance-*,
+  -performance-enum-size,
   readability-*,
   -readability-magic-numbers,
   -readability-identifier-length,
   -readability-function-cognitive-complexity,
-  -readability-convert-member-functions-to-static
+  -readability-convert-member-functions-to-static,
+  -readability-uppercase-literal-suffix,
+  -readability-braces-around-statements,
+  -readability-math-missing-parentheses,
+  -readability-identifier-naming,
+  -readability-implicit-bool-conversion,
+  -readability-isolate-declaration,
+  -readability-use-concise-preprocessor-directives
 
 WarningsAsErrors: ''
 
 HeaderFilterRegex: 'src/.*\.hpp$'
 
 CheckOptions:
-  - key: readability-identifier-naming.ClassCase
-    value: CamelCase
-  - key: readability-identifier-naming.StructCase
-    value: CamelCase
-  - key: readability-identifier-naming.EnumCase
-    value: CamelCase
-  - key: readability-identifier-naming.FunctionCase
-    value: lower_case
-  - key: readability-identifier-naming.VariableCase
-    value: lower_case
-  - key: readability-identifier-naming.ParameterCase
-    value: lower_case
-  - key: readability-identifier-naming.MemberCase
-    value: lower_case
-  - key: readability-identifier-naming.PrivateMemberPrefix
-    value: '_'
-  - key: readability-identifier-naming.ConstantCase
-    value: UPPER_CASE
-  - key: readability-identifier-naming.NamespaceCase
-    value: lower_case
   - key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
     value: true
   - key: performance-unnecessary-value-param.AllowedTypes
     value: 'Eigen::.*'
-  - key: misc-include-cleaner.IgnoreHeaders
-    value: 'imgui.*;implot.*'
 ...

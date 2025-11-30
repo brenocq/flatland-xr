@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
-#include "geometry.hpp"
 #include <cmath>
+#include <core/geometry.hpp>
+#include <core/math_constants.hpp>
 
 namespace core {
 
@@ -65,10 +66,10 @@ float point_to_segment_distance(const Eigen::Vector2f& point, const Eigen::Vecto
 }
 
 float normalize_angle(float angle) {
-    while (angle > M_PI)
-        angle -= 2.0f * M_PI;
-    while (angle < -M_PI)
-        angle += 2.0f * M_PI;
+    while (angle > PI)
+        angle -= TWO_PI;
+    while (angle < -PI)
+        angle += TWO_PI;
     return angle;
 }
 
@@ -84,13 +85,13 @@ std::vector<float> unwrap_angles(const std::vector<float>& angles) {
     std::vector<float> unwrapped(angles.size());
     unwrapped[0] = angles[0];
 
-    for (size_t i = 1; i < angles.size(); i++) {
+    for (size_t i = 1; i < angles.size(); ++i) {
         float diff = angles[i] - angles[i - 1];
         // Normalize difference to [-pi, pi]
-        while (diff > M_PI)
-            diff -= 2.0f * M_PI;
-        while (diff < -M_PI)
-            diff += 2.0f * M_PI;
+        while (diff > PI)
+            diff -= TWO_PI;
+        while (diff < -PI)
+            diff += TWO_PI;
         unwrapped[i] = unwrapped[i - 1] + diff;
     }
 

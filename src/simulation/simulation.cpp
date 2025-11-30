@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
-#include "simulation.hpp"
 #include <core/geometry.hpp>
+#include <simulation/simulation.hpp>
 
 namespace simulation {
 
@@ -75,8 +75,8 @@ SimulationResult run(const core::Trajectory2D& trajectory, const std::vector<Eig
         Eigen::Vector2f specific_force = world_acc - config.gravity;
 
         // Rotate to body frame
-        float cos_t = std::cos(theta);
-        float sin_t = std::sin(theta);
+        float cos_t = std::cosf(theta);
+        float sin_t = std::sinf(theta);
         Eigen::Matrix2f R_wb; // World to body rotation
         R_wb << cos_t, sin_t, -sin_t, cos_t;
         Eigen::Vector2f body_acc = R_wb * specific_force;
@@ -84,7 +84,7 @@ SimulationResult run(const core::Trajectory2D& trajectory, const std::vector<Eig
         float gt_gyr = result.gt_omega[i];
 
         // Store ground truth IMU (no noise, but with bias for comparison)
-        result.gt_imu.push_back({body_acc, gt_gyr});
+        result.gt_imu.emplace_back(body_acc, gt_gyr);
         // Store noisy measurement
         result.imu_measurements.push_back(imu.measure(body_acc, gt_gyr));
 
@@ -95,10 +95,10 @@ SimulationResult run(const core::Trajectory2D& trajectory, const std::vector<Eig
             if (!is_landmark_occluded(pos, landmarks[j], walls)) {
                 auto gt_u = camera.project(pose, landmarks[j]);
                 if (gt_u.has_value()) {
-                    gt_frame_obs.push_back({gt_u.value(), j});
+                    gt_frame_obs.emplace_back(gt_u.value(), j);
                     auto noisy_u = camera.measure(pose, landmarks[j]);
                     if (noisy_u.has_value()) {
-                        noisy_frame_obs.push_back({noisy_u.value(), j});
+                        noisy_frame_obs.emplace_back(noisy_u.value(), j);
                     }
                 }
             }

@@ -134,7 +134,7 @@ TEST(PointToSegmentDistance, DegenerateSegment) {
     Eigen::Vector2f point(1, 1);
     Eigen::Vector2f seg_start(0, 0), seg_end(0, 0);
     float dist = point_to_segment_distance(point, seg_start, seg_end);
-    EXPECT_NEAR(dist, std::sqrt(2.0f), 1e-5f);
+    EXPECT_NEAR(dist, std::sqrtf(2.0f), 1e-5f);
 }
 
 // ============================================================================

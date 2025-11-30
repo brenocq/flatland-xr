@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
-#include "imu2d.hpp"
+#include <sensors/imu2d.hpp>
 
 namespace sensors {
 

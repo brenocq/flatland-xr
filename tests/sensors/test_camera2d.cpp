@@ -199,7 +199,7 @@ TEST_F(Camera2DTest, MeasureLandmark) {
     for (float m : measurements)
         variance += (m - mean) * (m - mean);
     variance /= measurements.size();
-    float std = std::sqrt(variance);
+    float std = std::sqrtf(variance);
 
     // Mean should be close to true value
     EXPECT_NEAR(mean, 50.0f, 1.0f);

@@ -39,8 +39,8 @@ void IMUIntegrator::process_imu(const sensors::IMUMeasurement& imu, float dt) {
     float gyr = imu.gyr - _imu->gyr_bias();
 
     // Rotate acceleration from body frame to world frame
-    float cos_t = std::cos(theta);
-    float sin_t = std::sin(theta);
+    float cos_t = std::cosf(theta);
+    float sin_t = std::sinf(theta);
     Eigen::Matrix2f R_bw; // Body to world rotation
     R_bw << cos_t, -sin_t, sin_t, cos_t;
     Eigen::Vector2f acc_world = R_bw * acc_body;

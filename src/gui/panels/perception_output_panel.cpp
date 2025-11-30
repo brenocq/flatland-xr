@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
-#include "perception_output_panel.hpp"
 #include "imgui.h"
 #include "implot.h"
 #include <gui/color.hpp>
+#include <gui/panels/perception_output_panel.hpp>
 #include <gui/plot.hpp>
 
 namespace gui {
@@ -37,7 +37,7 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
             std::vector<Eigen::Vector2f> est_positions;
             est_positions.reserve(num_poses);
             for (const auto& pose : est_poses) {
-                est_positions.push_back(pose.head<2>());
+                est_positions.emplace_back(pose.head<2>());
             }
             plot_2d_path("Estimated", est_positions, Color::Red());
             ImPlot::EndPlot();

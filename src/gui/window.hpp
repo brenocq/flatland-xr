@@ -33,7 +33,7 @@ class Window {
     size_t _width;
     size_t _height;
 
-    GLFWwindow* _window;
+    GLFWwindow* _window{nullptr};
 };
 
 } // namespace gui

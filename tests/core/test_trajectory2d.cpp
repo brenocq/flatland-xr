@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include <cmath>
+#include <core/math_constants.hpp>
 #include <core/trajectory2d.hpp>
 #include <gtest/gtest.h>
 
@@ -21,10 +22,10 @@ class Trajectory2DTest : public ::testing::Test {
         // Create a circular arc trajectory
         circular_poses.clear();
         for (int i = 0; i <= 8; i++) {
-            float angle = i * M_PI / 8.0f;
-            float x = std::cos(angle);
-            float y = std::sin(angle);
-            circular_poses.push_back(Eigen::Vector3f(x, y, angle + M_PI / 2));
+            float angle = static_cast<float>(i) * core::PI / 8.0f;
+            float x = std::cosf(angle);
+            float y = std::sinf(angle);
+            circular_poses.push_back(Eigen::Vector3f(x, y, angle + core::HALF_PI));
         }
     }
 

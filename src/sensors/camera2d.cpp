@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
-#include "camera2d.hpp"
 #include <cmath>
+#include <sensors/camera2d.hpp>
 
 namespace sensors {
 
@@ -42,8 +42,8 @@ std::optional<float> Camera2D::project(const Eigen::Vector3f& pose, const Eigen:
     Eigen::Vector2f to_landmark = landmark - cam_pos;
 
     // Build rotation matrix (world to camera)
-    float cos_a = std::cos(cam_angle);
-    float sin_a = std::sin(cam_angle);
+    float cos_a = std::cosf(cam_angle);
+    float sin_a = std::sinf(cam_angle);
     Eigen::Matrix2f R_wc;
     R_wc << cos_a, sin_a, -sin_a, cos_a;
 
@@ -76,10 +76,10 @@ std::vector<CameraMeasurement> Camera2D::project_landmarks(const Eigen::Vector3f
     std::vector<CameraMeasurement> observations;
     observations.reserve(landmarks.size());
 
-    for (size_t i = 0; i < landmarks.size(); i++) {
+    for (size_t i = 0; i < landmarks.size(); ++i) {
         auto u = project(pose, landmarks[i]);
         if (u.has_value()) {
-            observations.push_back(CameraMeasurement(u.value(), i));
+            observations.emplace_back(u.value(), i);
         }
     }
 
@@ -110,10 +110,10 @@ std::vector<CameraMeasurement> Camera2D::measure_landmarks(const Eigen::Vector3f
     std::vector<CameraMeasurement> observations;
     observations.reserve(landmarks.size());
 
-    for (size_t i = 0; i < landmarks.size(); i++) {
+    for (size_t i = 0; i < landmarks.size(); ++i) {
         auto u = measure(pose, landmarks[i]);
         if (u.has_value()) {
-            observations.push_back(CameraMeasurement(u.value(), i));
+            observations.emplace_back(u.value(), i);
         }
     }
 

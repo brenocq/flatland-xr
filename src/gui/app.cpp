@@ -4,15 +4,15 @@
 #include "imgui.h"
 #include "implot.h"
 
-#include <cmath>
+#include <core/math_constants.hpp>
 #include <gui/app.hpp>
 
 namespace gui {
 
-App::App() {}
+App::App() = default;
 
 void App::startup() {
-    _camera.set_intrinsics(100, 60.0f * M_PI / 180.0f);
+    _camera.set_intrinsics(100, 60.0f * core::DEG_TO_RAD);
     _camera.set_noise_std(1.0f);
     _imu.set_acc_bias(Eigen::Vector2f(0.0f, 0.0f));
     _imu.set_gyr_bias(0.0f);

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
-#include "trajectory2d.hpp"
-#include "geometry.hpp"
 #include <algorithm>
 #include <cmath>
+#include <core/geometry.hpp>
+#include <core/trajectory2d.hpp>
 
 namespace core {
 
@@ -21,23 +21,23 @@ void Trajectory2D::build(const std::vector<Eigen::Vector3f>& poses) {
     Eigen::RowVectorXf y_vals(poses.size());
     std::vector<float> theta_vals_raw(poses.size());
 
-    for (size_t i = 0; i < poses.size(); i++) {
-        x_vals(i) = poses[i].x();
-        y_vals(i) = poses[i].y();
+    for (size_t i = 0; i < poses.size(); ++i) {
+        x_vals(static_cast<Eigen::Index>(i)) = poses[i].x();
+        y_vals(static_cast<Eigen::Index>(i)) = poses[i].y();
         theta_vals_raw[i] = poses[i].z();
     }
 
     // Unwrap angles for continuity
     std::vector<float> theta_unwrapped = unwrap_angles(theta_vals_raw);
     Eigen::RowVectorXf theta_vals(poses.size());
-    for (size_t i = 0; i < poses.size(); i++) {
-        theta_vals(i) = theta_unwrapped[i];
+    for (size_t i = 0; i < poses.size(); ++i) {
+        theta_vals(static_cast<Eigen::Index>(i)) = theta_unwrapped[i];
     }
 
     // Create parameter values (knots) at t=0,1,2,...,n-1 normalized to [0,1]
     Eigen::RowVectorXf knots(poses.size());
-    for (size_t i = 0; i < poses.size(); i++) {
-        knots(i) = static_cast<float>(i) / static_cast<float>(poses.size() - 1);
+    for (size_t i = 0; i < poses.size(); ++i) {
+        knots(static_cast<Eigen::Index>(i)) = static_cast<float>(i) / static_cast<float>(poses.size() - 1);
     }
 
     // Fit cubic splines (degree 3)
@@ -55,7 +55,7 @@ void Trajectory2D::build(const std::vector<Pose2D>& poses) {
     std::vector<Eigen::Vector3f> pose_vectors;
     pose_vectors.reserve(poses.size());
     for (const auto& p : poses) {
-        pose_vectors.push_back(p.to_vector());
+        pose_vectors.emplace_back(p.to_vector());
     }
     build(pose_vectors);
 }
