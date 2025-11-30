@@ -169,14 +169,8 @@ void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& positi
 void plot_pose_highlight(const Eigen::Vector3f& pose) {
     float x = pose.x();
     float y = pose.y();
-    ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 3.0f, Color::Transparent(), 2.0f, Color::CatRed());
+    ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 4.0f, Color::Transparent(), 1.0f, Color::CatSapphire());
     ImPlot::PlotScatter("##HoverHighlight", &x, &y, 1);
-}
-
-void plot_time_highlight(size_t time_index) {
-    float x = static_cast<float>(time_index);
-    ImPlot::SetNextLineStyle(Color::CatRed(), 1.0f);
-    ImPlot::PlotInfLines("##TimeCursor", &x, 1);
 }
 
 } // namespace gui

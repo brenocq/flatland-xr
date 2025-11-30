@@ -30,33 +30,16 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
     if (ImPlot::BeginPlot("IMU Accelerometer", ImVec2(-1, 200))) {
         ImPlot::SetupAxes("Time Index", "Acceleration (m/s²)");
 
-        // Extract data
-        std::vector<float> gt_acc_x(num_steps), gt_acc_y(num_steps);
-        std::vector<float> meas_acc_x(num_steps), meas_acc_y(num_steps);
+        // Extract accelerometer data as Vector2f
+        std::vector<Eigen::Vector2f> gt_acc(num_steps), meas_acc(num_steps);
         for (size_t i = 0; i < num_steps; i++) {
-            gt_acc_x[i] = sim_result.gt_imu[i].acc.x();
-            gt_acc_y[i] = sim_result.gt_imu[i].acc.y();
-            meas_acc_x[i] = sim_result.imu_measurements[i].acc.x();
-            meas_acc_y[i] = sim_result.imu_measurements[i].acc.y();
+            gt_acc[i] = sim_result.gt_imu[i].acc;
+            meas_acc[i] = sim_result.imu_measurements[i].acc;
         }
 
-        // Colors: measurement colors and faded ground truth
-        Color color_x = Color::CatRed();
-        Color color_y = Color::CatBlue();
-        Color gt_color_x = Color(0.25f * color_x.r() + 0.75f, 0.25f * color_x.g() + 0.75f, 0.25f * color_x.b() + 0.75f);
-        Color gt_color_y = Color(0.25f * color_y.r() + 0.75f, 0.25f * color_y.g() + 0.75f, 0.25f * color_y.b() + 0.75f);
-
-        // Plot ground truth (faded)
-        ImPlot::SetNextLineStyle(ImVec4(gt_color_x), 1.0f);
-        ImPlot::PlotLine("GT Acc X", time_axis.data(), gt_acc_x.data(), static_cast<int>(num_steps));
-        ImPlot::SetNextLineStyle(ImVec4(gt_color_y), 1.0f);
-        ImPlot::PlotLine("GT Acc Y", time_axis.data(), gt_acc_y.data(), static_cast<int>(num_steps));
-
-        // Plot measurements
-        ImPlot::SetNextLineStyle(ImVec4(color_x), 2.0f);
-        ImPlot::PlotLine("Acc X", time_axis.data(), meas_acc_x.data(), static_cast<int>(num_steps));
-        ImPlot::SetNextLineStyle(ImVec4(color_y), 2.0f);
-        ImPlot::PlotLine("Acc Y", time_axis.data(), meas_acc_y.data(), static_cast<int>(num_steps));
+        // Plot ground truth and measurements
+        plot_vector("GT Acc", time_axis, gt_acc, Color::FadedPalette(), 1.0f);
+        plot_vector("Acc", time_axis, meas_acc, Color::DefaultPalette(), 2.0f);
 
         _ui_state->handle_time_selector(num_steps);
         ImPlot::EndPlot();

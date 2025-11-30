@@ -104,28 +104,9 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
     if (ImPlot::BeginPlot("Velocity", ImVec2(-1, 200))) {
         ImPlot::SetupAxes("Time Index", "Velocity (m/idx)");
 
-        std::vector<float> gt_vx(num_poses), gt_vy(num_poses);
-        std::vector<float> est_vx(num_poses), est_vy(num_poses);
-        for (size_t i = 0; i < num_poses; i++) {
-            gt_vx[i] = sim_result.gt_vel[i].x();
-            gt_vy[i] = sim_result.gt_vel[i].y();
-            est_vx[i] = est_vel[i].x();
-            est_vy[i] = est_vel[i].y();
-        }
-
-        // Ground truth (faded)
-        Color gt_color_vx = Color(0.25f * 1.0f + 0.75f, 0.25f * 0.0f + 0.75f, 0.25f * 0.0f + 0.75f);
-        Color gt_color_vy = Color(0.25f * 0.0f + 0.75f, 0.25f * 0.0f + 0.75f, 0.25f * 1.0f + 0.75f);
-        ImPlot::SetNextLineStyle(ImVec4(gt_color_vx), 1.0f);
-        ImPlot::PlotLine("GT Vx", time_axis.data(), gt_vx.data(), static_cast<int>(num_poses));
-        ImPlot::SetNextLineStyle(ImVec4(gt_color_vy), 1.0f);
-        ImPlot::PlotLine("GT Vy", time_axis.data(), gt_vy.data(), static_cast<int>(num_poses));
-
-        // Estimated
-        ImPlot::SetNextLineStyle(ImVec4(Color::CatRed()), 2.0f);
-        ImPlot::PlotLine("Est Vx", time_axis.data(), est_vx.data(), static_cast<int>(num_poses));
-        ImPlot::SetNextLineStyle(ImVec4(Color::CatBlue()), 2.0f);
-        ImPlot::PlotLine("Est Vy", time_axis.data(), est_vy.data(), static_cast<int>(num_poses));
+        // Plot ground truth and estimated
+        plot_vector("GT V", time_axis, sim_result.gt_vel, Color::FadedPalette(), 1.0f);
+        plot_vector("Est V", time_axis, est_vel, Color::DefaultPalette(), 2.0f);
 
         _ui_state->handle_time_selector(num_poses);
         ImPlot::EndPlot();

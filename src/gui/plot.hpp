@@ -41,7 +41,18 @@ void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& positi
 /// Draw a highlight circle at the specified pose position (call inside active ImPlot context)
 void plot_pose_highlight(const Eigen::Vector3f& pose);
 
-/// Draw a vertical line at the specified time index (call inside active ImPlot context)
-void plot_time_highlight(size_t time_index);
+/// Plot multiple lines from a vector of N-dimensional vectors
+/// @tparam Size Dimension of the vectors (e.g., 2 for Vec2, 3 for Vec3)
+/// @param label Base label for the lines (e.g., "Acc" -> "Acc X", "Acc Y")
+/// @param time_axis X-axis values (usually time indices)
+/// @param data Vector of N-dimensional vectors
+/// @param colors Colors for each dimension (defaults to DefaultPalette)
+/// @param line_width Line width (default -1.0f = auto)
+template <int Size> void plot_vector(const std::string& label, const std::vector<float>& time_axis,
+                                     const std::vector<Eigen::Vector<float, Size>>& data, const std::vector<Color>& colors = Color::DefaultPalette(),
+                                     float line_width = -1.0f);
 
 } // namespace gui
+
+// Template implementation
+#include <gui/plot_impl.hpp>

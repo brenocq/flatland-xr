@@ -24,6 +24,11 @@ class Color : public Eigen::Vector4f {
     float& b() { return z(); }
     float& a() { return w(); }
 
+    static Color Lerp(const Color& c1, const Color& c2, float t) {
+        return Color((1.0f - t) * c1.r() + t * c2.r(), (1.0f - t) * c1.g() + t * c2.g(), (1.0f - t) * c1.b() + t * c2.b(),
+                     (1.0f - t) * c1.a() + t * c2.a());
+    }
+
     static Color Auto() { return Color(0.0f, 0.0f, 0.0f, -1.0f); }
     static Color Black() { return Color(0.0f, 0.0f, 0.0f); }
     static Color Blue() { return Color(0.0f, 0.0f, 1.0f); }
@@ -66,6 +71,15 @@ class Color : public Eigen::Vector4f {
     static Color CatSapphire() { return Color(0.458f, 0.784f, 0.878f); }  // #74c7ec
     static Color CatBlue() { return Color(0.533f, 0.698f, 0.976f); }      // #89b4fa
     static Color CatLavender() { return Color(0.709f, 0.764f, 0.980f); }  // #b4befe
+
+    // Color palettes
+    static std::vector<Color> DefaultPalette() { return {CatRed(), CatGreen(), CatBlue(), CatLavender()}; }
+
+    static std::vector<Color> FadedPalette() {
+        // 50% of original color + 50% white for a faded look
+        auto fade = [](const Color& c) { return Color::Lerp(c, Color::White(), 0.5f); };
+        return {fade(CatRed()), fade(CatGreen()), fade(CatBlue()), fade(CatLavender())};
+    }
 };
 
 } // namespace gui
