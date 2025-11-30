@@ -49,6 +49,26 @@ struct EstimationResult {
         }
         return vels;
     }
+
+    /// Extract pose standard deviations (sqrt of diagonal of covariance)
+    std::vector<Eigen::Vector3f> get_pose_std() const {
+        std::vector<Eigen::Vector3f> stds;
+        stds.reserve(states.size());
+        for (const auto& s : states) {
+            stds.push_back(s.pose_cov.diagonal().cwiseSqrt());
+        }
+        return stds;
+    }
+
+    /// Extract velocity standard deviations (sqrt of diagonal of covariance)
+    std::vector<Eigen::Vector2f> get_velocity_std() const {
+        std::vector<Eigen::Vector2f> stds;
+        stds.reserve(states.size());
+        for (const auto& s : states) {
+            stds.push_back(s.vel_cov.diagonal().cwiseSqrt());
+        }
+        return stds;
+    }
 };
 
 /// Base class for state estimators

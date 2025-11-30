@@ -52,7 +52,7 @@ template <int Size> void plot_vector(const std::string& label, const std::vector
                                      const std::vector<Eigen::Vector<float, Size>>& data, const std::vector<Color>& colors = Color::DefaultPalette(),
                                      float line_width = -1.0f);
 
-/// Plot covariance bands (mean ± std) for N-dimensional vectors
+/// Plot covariance bands (mean ± 3*std) for N-dimensional vectors
 /// @tparam Size Dimension of the vectors (e.g., 2 for Vec2, 3 for Vec3)
 /// @param label Base label (e.g., "Est" -> "Est X Cov", "Est Y Cov")
 /// @param time_axis X-axis values (usually time indices)

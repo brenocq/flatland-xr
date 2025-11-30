@@ -29,6 +29,8 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
     // Extract poses and velocities from estimation result
     std::vector<Eigen::Vector3f> est_poses = est_result.get_poses();
     std::vector<Eigen::Vector2f> est_vel = est_result.get_velocities();
+    std::vector<Eigen::Vector3f> pose_std = est_result.get_pose_std();
+    std::vector<Eigen::Vector2f> vel_std = est_result.get_velocity_std();
 
     // 2D trajectory plot
     if (ImPlot::BeginPlot("Trajectory", ImVec2(-1, 300), ImPlotFlags_Equal)) {
@@ -52,28 +54,20 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
     if (ImPlot::BeginPlot("Position", ImVec2(-1, 200))) {
         ImPlot::SetupAxes("Time Index", "Position (m)");
 
-        std::vector<float> gt_x(num_poses), gt_y(num_poses);
-        std::vector<float> est_x(num_poses), est_y(num_poses);
+        // Extract position data as Vector2f
+        std::vector<Eigen::Vector2f> gt_pos(num_poses), est_pos(num_poses), pos_std_2d(num_poses);
         for (size_t i = 0; i < num_poses; i++) {
-            gt_x[i] = sim_result.gt_poses[i].x();
-            gt_y[i] = sim_result.gt_poses[i].y();
-            est_x[i] = est_poses[i].x();
-            est_y[i] = est_poses[i].y();
+            gt_pos[i] = sim_result.gt_poses[i].head<2>();
+            est_pos[i] = est_poses[i].head<2>();
+            pos_std_2d[i] = pose_std[i].head<2>(); // Extract X and Y std
         }
 
-        // Ground truth (faded)
-        Color gt_color_x = Color(0.25f * 1.0f + 0.75f, 0.25f * 0.0f + 0.75f, 0.25f * 0.0f + 0.75f);
-        Color gt_color_y = Color(0.25f * 0.0f + 0.75f, 0.25f * 0.0f + 0.75f, 0.25f * 1.0f + 0.75f);
-        ImPlot::SetNextLineStyle(ImVec4(gt_color_x), 1.0f);
-        ImPlot::PlotLine("GT X", time_axis.data(), gt_x.data(), static_cast<int>(num_poses));
-        ImPlot::SetNextLineStyle(ImVec4(gt_color_y), 1.0f);
-        ImPlot::PlotLine("GT Y", time_axis.data(), gt_y.data(), static_cast<int>(num_poses));
+        // Plot estimation covariance
+        plot_covariance("Est", time_axis, est_pos, pos_std_2d);
 
-        // Estimated
-        ImPlot::SetNextLineStyle(ImVec4(Color::CatRed()), 2.0f);
-        ImPlot::PlotLine("Est X", time_axis.data(), est_x.data(), static_cast<int>(num_poses));
-        ImPlot::SetNextLineStyle(ImVec4(Color::CatBlue()), 2.0f);
-        ImPlot::PlotLine("Est Y", time_axis.data(), est_y.data(), static_cast<int>(num_poses));
+        // Plot ground truth and estimated
+        plot_vector("GT", time_axis, gt_pos, Color::FadedPalette(), 1.0f);
+        plot_vector("Est", time_axis, est_pos, Color::DefaultPalette(), 2.0f);
 
         _ui_state->handle_time_selector(num_poses);
         ImPlot::EndPlot();
@@ -83,18 +77,20 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
     if (ImPlot::BeginPlot("Orientation", ImVec2(-1, 200))) {
         ImPlot::SetupAxes("Time Index", "Orientation (rad)");
 
-        std::vector<float> gt_theta(num_poses), est_theta(num_poses);
+        // Extract orientation data as 1D vectors
+        std::vector<Eigen::Vector<float, 1>> gt_theta(num_poses), est_theta(num_poses), theta_std(num_poses);
         for (size_t i = 0; i < num_poses; i++) {
-            gt_theta[i] = sim_result.gt_poses[i].z();
-            est_theta[i] = est_poses[i].z();
+            gt_theta[i](0) = sim_result.gt_poses[i].z();
+            est_theta[i](0) = est_poses[i].z();
+            theta_std[i](0) = pose_std[i].z(); // Extract theta std
         }
 
-        Color gt_color = Color(0.25f * 0.0f + 0.75f, 0.25f * 0.5f + 0.75f, 0.25f * 0.0f + 0.75f);
-        ImPlot::SetNextLineStyle(ImVec4(gt_color), 1.0f);
-        ImPlot::PlotLine("GT Theta", time_axis.data(), gt_theta.data(), static_cast<int>(num_poses));
+        // Plot estimation covariance
+        plot_covariance("Est Theta", time_axis, est_theta, theta_std);
 
-        ImPlot::SetNextLineStyle(ImVec4(Color::CatGreen()), 2.0f);
-        ImPlot::PlotLine("Est Theta", time_axis.data(), est_theta.data(), static_cast<int>(num_poses));
+        // Plot ground truth and estimated
+        plot_vector("GT Theta", time_axis, gt_theta, Color::FadedPalette(), 1.0f);
+        plot_vector("Est Theta", time_axis, est_theta, Color::DefaultPalette(), 2.0f);
 
         _ui_state->handle_time_selector(num_poses);
         ImPlot::EndPlot();
@@ -103,6 +99,9 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
     // Velocity plot
     if (ImPlot::BeginPlot("Velocity", ImVec2(-1, 200))) {
         ImPlot::SetupAxes("Time Index", "Velocity (m/idx)");
+
+        // Plot estimation covariance
+        plot_covariance("Est V", time_axis, est_vel, vel_std);
 
         // Plot ground truth and estimated
         plot_vector("GT V", time_axis, sim_result.gt_vel, Color::FadedPalette(), 1.0f);
