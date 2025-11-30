@@ -198,3 +198,15 @@ if(FLATLAND_XR_BUILD_TESTS)
     include(GoogleTest)
     gtest_discover_tests(flatland-tests)
 endif()
+
+# Copy resources to build directory for development
+add_custom_command(
+    TARGET flatland-xr POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/resources
+            ${CMAKE_BINARY_DIR}/resources
+    COMMENT "Copying resources to build directory"
+)
+
+# Configure source directory path for resource loading
+target_compile_definitions(flatland-xr PRIVATE FLATLAND_XR_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

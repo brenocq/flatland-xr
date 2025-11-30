@@ -8,6 +8,7 @@
 
 #include <gui/color.hpp>
 #include <gui/window.hpp>
+#include <core/resources.hpp>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -192,7 +193,12 @@ bool Window::create() {
     // Setup Catppuccin Mocha style
     setup_catppuccin_style();
 
-    // Setup Gruvbox colormap for ImPlot
+    // Load Inter font
+    ImGuiIO& io = ImGui::GetIO();
+    std::string font_path = core::get_resource_path("fonts/Inter-Regular.ttf");
+    io.Fonts->AddFontFromFileTTF(font_path.c_str(), 16.0f);
+
+    // Setup Catppuccin colormap for ImPlot
     setup_catppuccin_colormap();
 
     // Setup backend
