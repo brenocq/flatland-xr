@@ -17,7 +17,7 @@ jobs:
           - { name: MinGW, cc: gcc, cxx: g++ }
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup MinGW
         if: matrix.compiler.name == 'MinGW'
