@@ -19,7 +19,7 @@ void plot_2d_line(const std::string& label, const std::vector<Eigen::Vector2f>& 
     if (positions.empty())
         return;
 
-    ImPlot::SetNextLineStyle(ImVec4(color), weight);
+    ImPlot::SetNextLineStyle(color, weight);
     ImPlot::PlotLine(label.c_str(), &positions[0].x(), &positions[0].y(), static_cast<int>(positions.size()), ImPlotLineFlags_None, 0,
                      sizeof(Eigen::Vector2f));
 }
@@ -28,7 +28,7 @@ void plot_2d_scatter(const std::string& label, const std::vector<Eigen::Vector2f
     if (positions.empty())
         return;
 
-    ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, size, ImVec4(color), IMPLOT_AUTO, ImVec4(color));
+    ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, size, color, IMPLOT_AUTO, color);
     ImPlot::PlotScatter(label.c_str(), &positions[0].x(), &positions[0].y(), static_cast<int>(positions.size()), ImPlotScatterFlags_None, 0,
                         sizeof(Eigen::Vector2f));
 }
@@ -53,7 +53,7 @@ void plot_2d_camera_frustum(const std::string& label, const Eigen::Vector2f& pos
     // Draw camera frustum (triangle from position to image plane corners)
     std::vector<Eigen::Vector2f> frustum = {position, left_corner, right_corner, position};
 
-    ImPlot::SetNextLineStyle(ImVec4(color), weight);
+    ImPlot::SetNextLineStyle(color, weight);
     ImPlot::PlotLine(label.c_str(), &frustum[0].x(), &frustum[0].y(), static_cast<int>(frustum.size()), ImPlotLineFlags_None, 0,
                      sizeof(Eigen::Vector2f));
 }
@@ -146,7 +146,7 @@ void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f
         Eigen::Vector2f point = left_corner + (right_corner - left_corner) * t;
 
         Color color = Color::Random(obs.landmark_id);
-        ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 4.0f, ImVec4(color), IMPLOT_AUTO, ImVec4(color));
+        ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 4.0f, color, IMPLOT_AUTO, color);
         ImPlot::PlotScatter(label.c_str(), &point.x(), &point.y(), 1, ImPlotScatterFlags_None, 0, sizeof(Eigen::Vector2f));
     }
 }
@@ -161,9 +161,22 @@ void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& positi
         Color color = Color::Random(obs.landmark_id);
 
         std::vector<Eigen::Vector2f> ray = {position, landmark};
-        ImPlot::SetNextLineStyle(ImVec4(color), weight);
+        ImPlot::SetNextLineStyle(color, weight);
         ImPlot::PlotLine(label.c_str(), &ray[0].x(), &ray[0].y(), static_cast<int>(ray.size()), ImPlotLineFlags_None, 0, sizeof(Eigen::Vector2f));
     }
+}
+
+void plot_pose_highlight(const Eigen::Vector3f& pose) {
+    float x = pose.x();
+    float y = pose.y();
+    ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 3.0f, Color::Transparent(), 2.0f, Color::Red());
+    ImPlot::PlotScatter("##HoverHighlight", &x, &y, 1);
+}
+
+void plot_time_highlight(size_t time_index) {
+    float x = static_cast<float>(time_index);
+    ImPlot::SetNextLineStyle(Color::Red(), 1.0f);
+    ImPlot::PlotInfLines("##TimeCursor", &x, 1);
 }
 
 } // namespace gui

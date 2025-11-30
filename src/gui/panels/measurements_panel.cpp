@@ -5,6 +5,8 @@
 #include "implot.h"
 #include <gui/color.hpp>
 #include <gui/panels/measurements_panel.hpp>
+#include <gui/plot.hpp>
+#include <gui/ui_state.hpp>
 #include <map>
 
 namespace gui {
@@ -56,6 +58,7 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
             ImPlot::SetNextLineStyle(ImVec4(color_y), 2.0f);
             ImPlot::PlotLine("Acc Y", time_axis.data(), meas_acc_y.data(), static_cast<int>(num_steps));
 
+            _ui_state->handle_hovered_time(num_steps);
             ImPlot::EndPlot();
         }
 
@@ -82,6 +85,7 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
             ImPlot::SetNextLineStyle(ImVec4(color_gyr), 2.0f);
             ImPlot::PlotLine("Gyro", time_axis.data(), meas_gyr.data(), static_cast<int>(num_steps));
 
+            _ui_state->handle_hovered_time(num_steps);
             ImPlot::EndPlot();
         }
 
@@ -198,6 +202,7 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
                 }
             }
 
+            _ui_state->handle_hovered_time(num_steps);
             ImPlot::EndPlot();
         }
     }

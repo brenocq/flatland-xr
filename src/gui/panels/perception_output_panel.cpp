@@ -6,6 +6,7 @@
 #include <gui/color.hpp>
 #include <gui/panels/perception_output_panel.hpp>
 #include <gui/plot.hpp>
+#include <gui/ui_state.hpp>
 
 namespace gui {
 
@@ -40,6 +41,10 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
                 est_positions.emplace_back(pose.head<2>());
             }
             plot_2d_path("Estimated", est_positions, Color::Red());
+
+            _ui_state->handle_hovered_pose(sim_result.gt_poses);
+            _ui_state->handle_hovered_pose(est_poses);
+
             ImPlot::EndPlot();
         }
 
@@ -70,6 +75,7 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
             ImPlot::SetNextLineStyle(ImVec4(Color::Blue()), 2.0f);
             ImPlot::PlotLine("Est Y", time_axis.data(), est_y.data(), static_cast<int>(num_poses));
 
+            _ui_state->handle_hovered_time(num_poses);
             ImPlot::EndPlot();
         }
 
@@ -90,6 +96,7 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
             ImPlot::SetNextLineStyle(ImVec4(Color::Green()), 2.0f);
             ImPlot::PlotLine("Est Theta", time_axis.data(), est_theta.data(), static_cast<int>(num_poses));
 
+            _ui_state->handle_hovered_time(num_poses);
             ImPlot::EndPlot();
         }
 
@@ -120,6 +127,7 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
             ImPlot::SetNextLineStyle(ImVec4(Color::Blue()), 2.0f);
             ImPlot::PlotLine("Est Vy", time_axis.data(), est_vy.data(), static_cast<int>(num_poses));
 
+            _ui_state->handle_hovered_time(num_poses);
             ImPlot::EndPlot();
         }
     }

@@ -12,6 +12,7 @@
 #include <gui/panels/measurements_panel.hpp>
 #include <gui/panels/perception_output_panel.hpp>
 #include <gui/panels/world_editor_panel.hpp>
+#include <gui/ui_state.hpp>
 #include <sensors/camera2d.hpp>
 #include <sensors/imu2d.hpp>
 #include <simulation/simulation.hpp>
@@ -76,6 +77,9 @@ class App {
     //----- Estimation -----//
     estimation::IMUIntegrator _imu_integrator;
     estimation::EstimationResult _estimation_result;
+
+    //----- Shared UI state -----//
+    UIState::SharedPtr _ui_state;
 
     //----- GUI panels -----//
     ConfigPanel _config_panel;

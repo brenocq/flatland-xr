@@ -9,7 +9,13 @@
 
 namespace gui {
 
-App::App() = default;
+App::App() : _ui_state(std::make_shared<UIState>()) {
+    _config_panel.set_ui_state(_ui_state);
+    _world_editor_panel.set_ui_state(_ui_state);
+    _measurements_panel.set_ui_state(_ui_state);
+    _perception_output_panel.set_ui_state(_ui_state);
+    _error_metrics_panel.set_ui_state(_ui_state);
+}
 
 void App::startup() {
     _camera.set_intrinsics(100, 60.0f * core::DEG_TO_RAD);

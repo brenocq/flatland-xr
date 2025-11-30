@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <gui/ui_state.hpp>
 #include <sensors/camera2d.hpp>
 #include <sensors/imu2d.hpp>
 #include <simulation/simulation.hpp>
@@ -14,8 +15,13 @@ class ConfigPanel {
   public:
     ConfigPanel() = default;
 
+    void set_ui_state(UIState::SharedPtr ui_state) { _ui_state = std::move(ui_state); }
+
     /// Render the panel. Returns true if any configuration changed.
     bool render(float& dt, simulation::SimulationConfig& sim_config, sensors::Camera2D& camera, sensors::IMU2D& imu);
+
+  private:
+    UIState::SharedPtr _ui_state;
 };
 
 } // namespace gui

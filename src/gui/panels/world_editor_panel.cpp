@@ -7,6 +7,7 @@
 #include <gui/color.hpp>
 #include <gui/panels/world_editor_panel.hpp>
 #include <gui/plot.hpp>
+#include <gui/ui_state.hpp>
 #include <simulation/simulation.hpp>
 
 namespace gui {
@@ -357,6 +358,14 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
             // Render trajectory
             if (gt_trajectory.is_valid()) {
                 plot_2d_trajectory("Trajectory", gt_trajectory, Color::Green());
+
+                // Extract poses from trajectory for hover detection
+                std::vector<Eigen::Vector3f> trajectory_poses;
+                trajectory_poses.reserve(static_cast<size_t>(gt_trajectory.max_t()) + 1);
+                for (float t = 0.0f; t <= gt_trajectory.max_t(); t += 1.0f) {
+                    trajectory_poses.push_back(gt_trajectory.pose_vector(t));
+                }
+                _ui_state->handle_hovered_pose(trajectory_poses);
             }
 
             // While drawing, show camera at last pose; otherwise show tooltip for closest point

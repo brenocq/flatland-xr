@@ -38,4 +38,10 @@ void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f
 void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& position, const std::vector<Eigen::Vector2f>& landmarks,
                          const std::vector<sensors::CameraMeasurement>& observations, float weight = -1.0f);
 
+/// Draw a highlight circle at the specified pose position (call inside active ImPlot context)
+void plot_pose_highlight(const Eigen::Vector3f& pose);
+
+/// Draw a vertical line at the specified time index (call inside active ImPlot context)
+void plot_time_highlight(size_t time_index);
+
 } // namespace gui
