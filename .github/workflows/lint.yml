@@ -1,0 +1,57 @@
+name: 🧹 Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  clang-format:
+    name: C++ (clang-format)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run clang-format
+        uses: jidicula/clang-format-action@v4.14.0
+        with:
+          clang-format-version: '18'
+          check-path: 'src'
+
+      - name: Run clang-format on tests
+        uses: jidicula/clang-format-action@v4.14.0
+        with:
+          clang-format-version: '18'
+          check-path: 'tests'
+
+  cmake-format:
+    name: CMake (cmake-format)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cmake-format
+        run: pip install cmakelang
+
+      - name: Check CMake formatting
+        run: |
+          find . -name 'CMakeLists.txt' -not -path './build/*' | xargs cmake-format --check
+
+  clang-tidy:
+    name: C++ (clang-tidy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libgl1-mesa-dev
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DFLATLAND_BUILD_TESTS=OFF
+
+      - name: Run clang-tidy
+        run: |
+          find src -name '*.cpp' | xargs clang-tidy -p build
