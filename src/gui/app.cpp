@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "implot.h"
 
 #include <core/math.hpp>
@@ -64,13 +65,59 @@ void App::update() {
     render_menu_bar();
 
     // Docking
-    ImGuiID dockId = ImGui::GetID("##DockSpace");
-    ImGui::DockSpaceOverViewport(dockId, ImGui::GetMainViewport());
-    ImGui::SetNextWindowDockID(dockId, ImGuiCond_Appearing);
-    if (ImGui::Begin("Flatland XR")) {
-        render();
+    ImGuiID dockspace_id = ImGui::GetID("##DockSpace");
+    ImGui::DockSpaceOverViewport(dockspace_id, ImGui::GetMainViewport());
+
+    // Setup initial layout on first frame
+    if (_first_render) {
+        setup_docking_layout(dockspace_id);
+    }
+
+    bool should_simulate = _first_render;
+
+    // Render each panel as a separate window
+    if (ImGui::Begin("World Editor")) {
+        world::Preset prev_preset = _current_preset;
+        bool world_changed = _world_editor_panel.render(_current_preset, _gt_pose_raw, _gt_trajectory, _landmarks, _walls, _wall_raw_points, _camera);
+
+        // If preset changed via combo box, load the new preset
+        if (_current_preset != prev_preset && _current_preset != world::Preset::Custom) {
+            load_world_preset(_current_preset);
+            world_changed = true;
+        }
+
+        should_simulate |= world_changed;
     }
     ImGui::End();
+
+    if (ImGui::Begin("Config")) {
+        should_simulate |= _config_panel.render(_dt, _sim_config, _camera, _imu);
+    }
+    ImGui::End();
+
+    if (should_simulate) {
+        simulate();
+        estimate();
+    }
+
+    if (ImGui::Begin("Sensor Measurements")) {
+        _measurements_panel.render(_sim_result, _camera);
+    }
+    ImGui::End();
+
+    if (ImGui::Begin("Perception Output")) {
+        _perception_output_panel.render(_estimation_result, _gt_trajectory, _sim_result);
+    }
+    ImGui::End();
+
+    if (ImGui::Begin("Error Metrics")) {
+        _error_metrics_panel.render();
+    }
+    ImGui::End();
+
+    if (_first_render) {
+        ImGui::SetWindowFocus("World Editor");
+    }
 
     // Demo windows
     if (_show_imgui_demo) {
@@ -82,31 +129,27 @@ void App::update() {
     if (_show_about) {
         render_about_window();
     }
+
+    _first_render = false;
 }
 
-void App::render() {
-    bool should_simulate = _first_render;
-    should_simulate |= _config_panel.render(_dt, _sim_config, _camera, _imu);
+void App::setup_docking_layout(ImGuiID dockspace_id) {
+    ImGui::DockBuilderRemoveNode(dockspace_id);
+    ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_None);
+    ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->WorkSize);
 
-    // Handle world preset changes from the panel
-    world::Preset prev_preset = _current_preset;
-    bool world_changed = _world_editor_panel.render(_current_preset, _gt_pose_raw, _gt_trajectory, _landmarks, _walls, _wall_raw_points, _camera);
+    // Split the dockspace into main area (left) and sidebar (right)
+    ImGuiID dock_main_id = dockspace_id;
+    ImGuiID dock_right_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
 
-    // If preset changed via combo box, load the new preset
-    if (_current_preset != prev_preset && _current_preset != world::Preset::Custom) {
-        load_world_preset(_current_preset);
-        world_changed = true;
-    }
+    // Dock windows to their positions
+    ImGui::DockBuilderDockWindow("World Editor", dock_main_id);
+    ImGui::DockBuilderDockWindow("Sensor Measurements", dock_main_id);
+    ImGui::DockBuilderDockWindow("Perception Output", dock_main_id);
+    ImGui::DockBuilderDockWindow("Error Metrics", dock_main_id);
+    ImGui::DockBuilderDockWindow("Config", dock_right_id);
 
-    should_simulate |= world_changed;
-    if (should_simulate) {
-        _first_render = false;
-        simulate();
-        estimate();
-    }
-    _measurements_panel.render(_sim_result, _camera);
-    _perception_output_panel.render(_estimation_result, _gt_trajectory, _sim_result);
-    _error_metrics_panel.render();
+    ImGui::DockBuilderFinish(dockspace_id);
 }
 
 void App::simulate() {
@@ -165,7 +208,7 @@ void App::render_about_window() {
         return;
     }
 
-    ImGui::Text("Flatland XR v0.1.0");
+    ImGui::Text("Flatland XR v0.1");
     ImGui::Separator();
 
     ImGui::TextLinkOpenURL("Homepage", "https://github.com/brenocq/flatland-xr");

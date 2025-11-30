@@ -6,10 +6,6 @@
 
 namespace gui {
 
-void ErrorMetricsPanel::render() {
-    if (ImGui::CollapsingHeader("Error Metrics")) {
-        ImGui::Text("TODO");
-    }
-}
+void ErrorMetricsPanel::render() { ImGui::Text("TODO"); }
 
 } // namespace gui

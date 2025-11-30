@@ -35,8 +35,8 @@ class App {
     void update();
 
   private:
-    /// Render the app's ImGui window
-    void render();
+    /// Setup initial docking layout
+    void setup_docking_layout(ImGuiID dockspace_id);
 
     /// Render the menu bar
     void render_menu_bar();
