@@ -356,13 +356,14 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
 
         // Render trajectory
         if (gt_trajectory.is_valid()) {
-            plot_2d_trajectory("Trajectory", gt_trajectory, Color::Green());
+            plot_2d_trajectory("Trajectory", gt_trajectory, Color::CatGreen());
 
             // Extract poses from trajectory for selection
             std::vector<Eigen::Vector3f> trajectory_poses;
-            trajectory_poses.reserve(static_cast<size_t>(gt_trajectory.max_t()) + 1);
-            for (float t = 0.0f; t <= gt_trajectory.max_t(); t += 1.0f) {
-                trajectory_poses.push_back(gt_trajectory.pose_vector(t));
+            const int max_t = static_cast<int>(gt_trajectory.max_t());
+            trajectory_poses.reserve(static_cast<size_t>(max_t) + 1);
+            for (int i = 0; i <= max_t; ++i) {
+                trajectory_poses.push_back(gt_trajectory.pose_vector(static_cast<float>(i)));
             }
             _ui_state->handle_pose_selection(trajectory_poses);
         }
@@ -384,7 +385,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
                     }
                 }
             }
-            plot_2d_camera_frustum("##DrawingCamera", pos, pose.z(), camera.fov(), 1.0f, Color::Blue());
+            plot_2d_camera_frustum("##DrawingCamera", pos, pose.z(), camera.fov(), 1.0f, Color::CatBlue());
             plot_2d_camera_rays("##DrawingRays", pos, landmarks, observations, 1.0f);
             plot_2d_camera_observations("##DrawingObs", pos, pose.z(), camera, observations);
         } else {
@@ -405,7 +406,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
                             obs_count++;
                             // Only show observation for the hovered landmark
                             std::vector<sensors::CameraMeasurement> single_obs = {{u.value(), static_cast<size_t>(closest_landmark)}};
-                            plot_2d_camera_frustum("##LandmarkHoverCamera", pos, pose.z(), camera.fov(), 1.0f, Color::Blue());
+                            plot_2d_camera_frustum("##LandmarkHoverCamera", pos, pose.z(), camera.fov(), 1.0f, Color::CatBlue());
                             plot_2d_camera_rays("##LandmarkHoverRays", pos, landmarks, single_obs, 1.0f);
                             plot_2d_camera_observations("##LandmarkHoverObs", pos, pose.z(), camera, single_obs);
                         }
@@ -428,7 +429,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
                 }
                 ImGui::SetTooltip("GT Pose %d\nPos: (%.2f, %.2f)\nOrientation: %.2f°\nObservations: %zu", closest_gt, pose.x(), pose.y(),
                                   pose.z() * core::RAD_TO_DEG, observations.size());
-                plot_2d_camera_frustum("##HoverCamera", pos, pose.z(), camera.fov(), 1.0f, Color::Blue());
+                plot_2d_camera_frustum("##HoverCamera", pos, pose.z(), camera.fov(), 1.0f, Color::CatBlue());
                 plot_2d_camera_rays("##HoverRays", pos, landmarks, observations, 1.0f);
                 plot_2d_camera_observations("##HoverObs", pos, pose.z(), camera, observations);
             }

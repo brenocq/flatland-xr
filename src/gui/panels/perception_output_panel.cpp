@@ -32,14 +32,14 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
     // 2D trajectory plot
     if (ImPlot::BeginPlot("Trajectory", ImVec2(-1, 300), ImPlotFlags_Equal)) {
         if (gt_trajectory.is_valid()) {
-            plot_2d_trajectory("Ground-truth", gt_trajectory, Color::Green());
+            plot_2d_trajectory("Ground-truth", gt_trajectory, Color::CatGreen());
         }
         std::vector<Eigen::Vector2f> est_positions;
         est_positions.reserve(num_poses);
         for (const auto& pose : est_poses) {
             est_positions.emplace_back(pose.head<2>());
         }
-        plot_2d_path("Estimated", est_positions, Color::Red());
+        plot_2d_path("Estimated", est_positions, Color::CatRed());
 
         _ui_state->handle_pose_selection(sim_result.gt_poses);
         _ui_state->handle_pose_selection(est_poses);
@@ -69,9 +69,9 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
         ImPlot::PlotLine("GT Y", time_axis.data(), gt_y.data(), static_cast<int>(num_poses));
 
         // Estimated
-        ImPlot::SetNextLineStyle(ImVec4(Color::Red()), 2.0f);
+        ImPlot::SetNextLineStyle(ImVec4(Color::CatRed()), 2.0f);
         ImPlot::PlotLine("Est X", time_axis.data(), est_x.data(), static_cast<int>(num_poses));
-        ImPlot::SetNextLineStyle(ImVec4(Color::Blue()), 2.0f);
+        ImPlot::SetNextLineStyle(ImVec4(Color::CatBlue()), 2.0f);
         ImPlot::PlotLine("Est Y", time_axis.data(), est_y.data(), static_cast<int>(num_poses));
 
         _ui_state->handle_time_selector(num_poses);
@@ -92,7 +92,7 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
         ImPlot::SetNextLineStyle(ImVec4(gt_color), 1.0f);
         ImPlot::PlotLine("GT Theta", time_axis.data(), gt_theta.data(), static_cast<int>(num_poses));
 
-        ImPlot::SetNextLineStyle(ImVec4(Color::Green()), 2.0f);
+        ImPlot::SetNextLineStyle(ImVec4(Color::CatGreen()), 2.0f);
         ImPlot::PlotLine("Est Theta", time_axis.data(), est_theta.data(), static_cast<int>(num_poses));
 
         _ui_state->handle_time_selector(num_poses);
@@ -121,9 +121,9 @@ void PerceptionOutputPanel::render(const estimation::EstimationResult& est_resul
         ImPlot::PlotLine("GT Vy", time_axis.data(), gt_vy.data(), static_cast<int>(num_poses));
 
         // Estimated
-        ImPlot::SetNextLineStyle(ImVec4(Color::Red()), 2.0f);
+        ImPlot::SetNextLineStyle(ImVec4(Color::CatRed()), 2.0f);
         ImPlot::PlotLine("Est Vx", time_axis.data(), est_vx.data(), static_cast<int>(num_poses));
-        ImPlot::SetNextLineStyle(ImVec4(Color::Blue()), 2.0f);
+        ImPlot::SetNextLineStyle(ImVec4(Color::CatBlue()), 2.0f);
         ImPlot::PlotLine("Est Vy", time_axis.data(), est_vy.data(), static_cast<int>(num_poses));
 
         _ui_state->handle_time_selector(num_poses);

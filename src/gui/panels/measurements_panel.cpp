@@ -40,8 +40,8 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
         }
 
         // Colors: measurement colors and faded ground truth
-        Color color_x = Color::Red();
-        Color color_y = Color::Blue();
+        Color color_x = Color::CatRed();
+        Color color_y = Color::CatBlue();
         Color gt_color_x = Color(0.25f * color_x.r() + 0.75f, 0.25f * color_x.g() + 0.75f, 0.25f * color_x.b() + 0.75f);
         Color gt_color_y = Color(0.25f * color_y.r() + 0.75f, 0.25f * color_y.g() + 0.75f, 0.25f * color_y.b() + 0.75f);
 
@@ -73,7 +73,7 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
         }
 
         // Colors
-        Color color_gyr = Color::Green();
+        Color color_gyr = Color::CatGreen();
         Color gt_color_gyr = Color(0.25f * color_gyr.r() + 0.75f, 0.25f * color_gyr.g() + 0.75f, 0.25f * color_gyr.b() + 0.75f);
 
         // Plot ground truth (faded)

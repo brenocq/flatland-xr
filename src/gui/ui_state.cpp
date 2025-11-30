@@ -24,7 +24,7 @@ bool UIState::handle_time_selector(size_t max_time_idx) {
     }
 
     double time_value = static_cast<double>(selected_time_index);
-    ImPlot::DragLineX(0, &time_value, ImVec4(Color::Red()), 2.0f);
+    ImPlot::DragLineX(0, &time_value, ImVec4(Color::CatRed()), 2.0f);
 
     // Snap to nearest integer time index
     int new_index = static_cast<int>(std::round(time_value));
