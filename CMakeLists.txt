@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 project(flatland-xr LANGUAGES CXX C)
 
 # Options
-option(BUILD_TESTS "Build unit tests" ON)
+option(FLATLAND_BUILD_TESTS "Build unit tests" ON)
 
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -15,7 +15,10 @@ cmake_policy(SET CMP0072 NEW) # Pefer GLVND over legacy GL libraries
 # cmake-format: on
 find_package(OpenGL REQUIRED)
 
-# Setup Eigen
+# Setup Eigen (disable tests, docs, etc.)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(EIGEN_BUILD_DOC OFF CACHE BOOL "" FORCE)
+set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
     eigen
     GIT_REPOSITORY "https://gitlab.com/libeigen/eigen.git"
@@ -24,7 +27,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(eigen)
 
-# Setup GLFW
+# Setup GLFW (disable tests, examples, docs)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
     glfw
     GIT_REPOSITORY "https://github.com/glfw/glfw"
@@ -144,7 +150,7 @@ endif()
 # ============================================================================
 # Testing
 # ============================================================================
-if(BUILD_TESTS)
+if(FLATLAND_BUILD_TESTS)
     enable_testing()
 
     # Setup Google Test
