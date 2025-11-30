@@ -70,11 +70,7 @@ FetchContent_Declare(
     GIT_PROGRESS TRUE
 )
 FetchContent_MakeAvailable(implot)
-set(IMPLOT_SOURCE
-    ${implot_SOURCE_DIR}/implot.cpp
-    ${implot_SOURCE_DIR}/implot_demo.cpp
-    ${implot_SOURCE_DIR}/implot_items.cpp
-)
+set(IMPLOT_SOURCE ${implot_SOURCE_DIR}/implot.cpp ${implot_SOURCE_DIR}/implot_demo.cpp ${implot_SOURCE_DIR}/implot_items.cpp)
 add_library(implot STATIC ${IMPLOT_SOURCE})
 target_include_directories(implot PUBLIC ${implot_SOURCE_DIR})
 target_link_libraries(implot PUBLIC imgui)
@@ -85,44 +81,33 @@ target_link_libraries(implot PUBLIC imgui)
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Core library
-add_library(flatland-core STATIC
-    ${SRC_DIR}/core/geometry.cpp
-    ${SRC_DIR}/core/trajectory2d.cpp
-)
+add_library(flatland-core STATIC ${SRC_DIR}/core/geometry.cpp ${SRC_DIR}/core/trajectory2d.cpp)
 target_include_directories(flatland-core PUBLIC ${SRC_DIR})
 target_link_libraries(flatland-core PUBLIC Eigen3::Eigen)
 
 # Sensors library
-add_library(flatland-sensors STATIC
-    ${SRC_DIR}/sensors/camera2d.cpp
-    ${SRC_DIR}/sensors/imu2d.cpp
-)
+add_library(flatland-sensors STATIC ${SRC_DIR}/sensors/camera2d.cpp ${SRC_DIR}/sensors/imu2d.cpp)
 target_include_directories(flatland-sensors PUBLIC ${SRC_DIR})
 target_link_libraries(flatland-sensors PUBLIC flatland-core)
 
 # World library
-add_library(flatland-world STATIC
-    ${SRC_DIR}/world/world.cpp
-)
+add_library(flatland-world STATIC ${SRC_DIR}/world/world.cpp)
 target_include_directories(flatland-world PUBLIC ${SRC_DIR})
 target_link_libraries(flatland-world PUBLIC flatland-core)
 
 # Simulation library
-add_library(flatland-simulation STATIC
-    ${SRC_DIR}/simulation/simulation.cpp
-)
+add_library(flatland-simulation STATIC ${SRC_DIR}/simulation/simulation.cpp)
 target_include_directories(flatland-simulation PUBLIC ${SRC_DIR})
 target_link_libraries(flatland-simulation PUBLIC flatland-core flatland-sensors flatland-world)
 
 # Estimation library
-add_library(flatland-estimation STATIC
-    ${SRC_DIR}/estimation/imu_integrator.cpp
-)
+add_library(flatland-estimation STATIC ${SRC_DIR}/estimation/imu_integrator.cpp)
 target_include_directories(flatland-estimation PUBLIC ${SRC_DIR})
 target_link_libraries(flatland-estimation PUBLIC flatland-core flatland-sensors)
 
 # GUI library (depends on ImGui/ImPlot)
-add_library(flatland-gui STATIC
+add_library(
+    flatland-gui STATIC
     ${SRC_DIR}/gui/app.cpp
     ${SRC_DIR}/gui/color.cpp
     ${SRC_DIR}/gui/plot.cpp
@@ -176,13 +161,8 @@ if(FLATLAND_BUILD_TESTS)
         tests/estimation/test_imu_integrator.cpp
     )
     add_executable(flatland-tests ${TEST_SOURCE})
-    target_link_libraries(flatland-tests PRIVATE
-        flatland-core
-        flatland-sensors
-        flatland-world
-        flatland-simulation
-        flatland-estimation
-        GTest::gtest_main
+    target_link_libraries(
+        flatland-tests PRIVATE flatland-core flatland-sensors flatland-world flatland-simulation flatland-estimation GTest::gtest_main
     )
 
     include(GoogleTest)

@@ -4,4 +4,19 @@ separate_ctrl_name_with_space: false
 separate_fn_name_with_space: false
 dangle_parens: true
 dangle_align: "prefix"
-max_pargs_hwrap: 2
+max_pargs_hwrap: 6
+max_subgroups_hwrap: 3
+
+# Keep simple commands on one line
+command_case: "canonical"
+keyword_case: "unchanged"
+
+# Always wrap these commands
+always_wrap: []
+
+# Per-command formatting overrides
+per_command:
+  set:
+    max_pargs_hwrap: 10
+  cmake_policy:
+    max_pargs_hwrap: 10
