@@ -7,8 +7,10 @@
 
 #include <core/math.hpp>
 #include <gui/app.hpp>
+#include <gui/widgets/text.hpp>
 
 namespace gui {
+using namespace gui::widgets;
 
 App::App() : _ui_state(std::make_shared<UIState>()) {
     _config_panel.set_ui_state(_ui_state);
@@ -208,21 +210,21 @@ void App::render_about_window() {
         return;
     }
 
-    ImGui::Text("Flatland XR v0.1");
+    widgets::Text("Flatland XR v0.1");
     ImGui::Separator();
 
-    ImGui::TextLinkOpenURL("Homepage", "https://github.com/brenocq/flatland-xr");
+    widgets::TextLinkOpenURL("Homepage", "https://github.com/brenocq/flatland-xr");
     ImGui::SameLine();
-    ImGui::TextLinkOpenURL("Issues", "https://github.com/brenocq/flatland-xr/issues");
+    widgets::TextLinkOpenURL("Issues", "https://github.com/brenocq/flatland-xr/issues");
     ImGui::SameLine();
-    ImGui::TextLinkOpenURL("Releases", "https://github.com/brenocq/flatland-xr/releases");
+    widgets::TextLinkOpenURL("Releases", "https://github.com/brenocq/flatland-xr/releases");
     ImGui::SameLine();
-    ImGui::TextLinkOpenURL("Sponsor", "https://github.com/sponsors/brenocq");
+    widgets::TextLinkOpenURL("Sponsor", "https://github.com/sponsors/brenocq");
 
     ImGui::Separator();
-    ImGui::Text("(c) 2025 Breno Cunha Queiroz");
-    ImGui::Text("Flatland XR is licensed under the MIT License.");
-    ImGui::Text("If you enjoy Flatland XR, please consider sponsoring the project.");
+    widgets::Text("(c) 2025 Breno Cunha Queiroz");
+    widgets::Text("Flatland XR is licensed under the MIT License.");
+    widgets::Text("If you enjoy Flatland XR, please consider sponsoring the project.");
 
     ImGui::End();
 }

@@ -7,13 +7,14 @@
 #include <gui/panels/measurements_panel.hpp>
 #include <gui/plot.hpp>
 #include <gui/ui_state.hpp>
+#include <gui/widgets/text.hpp>
 #include <map>
 
 namespace gui {
 
 void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, const sensors::Camera2D& camera) {
     if (!sim_result.is_valid()) {
-        ImGui::Text("No measurements available. Draw a trajectory first.");
+        widgets::Text("No measurements available. Draw a trajectory first.");
         return;
     }
 

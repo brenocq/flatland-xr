@@ -3,9 +3,10 @@
 
 #include "imgui.h"
 #include <gui/panels/error_metrics_panel.hpp>
+#include <gui/widgets/text.hpp>
 
 namespace gui {
 
-void ErrorMetricsPanel::render() { ImGui::Text("TODO"); }
+void ErrorMetricsPanel::render() { widgets::ColoredText(Color::CatRed(), "TODO"); }
 
 } // namespace gui

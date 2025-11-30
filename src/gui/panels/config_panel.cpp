@@ -4,6 +4,7 @@
 #include "imgui.h"
 #include <core/math.hpp>
 #include <gui/panels/config_panel.hpp>
+#include <gui/widgets/text.hpp>
 
 namespace gui {
 
@@ -11,7 +12,7 @@ bool ConfigPanel::render(float& dt, simulation::SimulationConfig& sim_config, se
     bool updated = false;
     ImGui::PushItemWidth(100);
 
-    ImGui::Text("Simulation");
+    widgets::BoldText("Simulation");
     if (ImGui::DragFloat("Time step (s)", &dt, 0.01f, 0.01f, 1.0f)) {
         updated = true;
     }
@@ -20,7 +21,7 @@ bool ConfigPanel::render(float& dt, simulation::SimulationConfig& sim_config, se
     }
     ImGui::Spacing();
 
-    ImGui::Text("Camera Config");
+    widgets::BoldText("Camera Config");
     int cam_width = camera.width();
     float cam_fov_deg = camera.fov() * core::RAD_TO_DEG;
     float cam_noise_std = camera.noise_std();
@@ -38,7 +39,7 @@ bool ConfigPanel::render(float& dt, simulation::SimulationConfig& sim_config, se
     }
     ImGui::Spacing();
 
-    ImGui::Text("IMU Config");
+    widgets::BoldText("IMU Config");
     Eigen::Vector2f acc_bias = imu.acc_bias();
     Eigen::Vector2f acc_noise_std = imu.acc_noise_std();
     float gyr_bias = imu.gyr_bias();

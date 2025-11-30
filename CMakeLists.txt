@@ -139,6 +139,7 @@ add_library(
     ${SRC_DIR}/gui/plot.cpp
     ${SRC_DIR}/gui/ui_state.cpp
     ${SRC_DIR}/gui/window.cpp
+    ${SRC_DIR}/gui/widgets/text.cpp
     ${SRC_DIR}/gui/panels/config_panel.cpp
     ${SRC_DIR}/gui/panels/error_metrics_panel.cpp
     ${SRC_DIR}/gui/panels/measurements_panel.cpp

@@ -6,9 +6,9 @@
 #define GL_SILENCE_DEPRECATION
 #endif
 
+#include <core/resources.hpp>
 #include <gui/color.hpp>
 #include <gui/window.hpp>
-#include <core/resources.hpp>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -193,10 +193,12 @@ bool Window::create() {
     // Setup Catppuccin Mocha style
     setup_catppuccin_style();
 
-    // Load Inter font
+    // Load Inter fonts (Regular and Bold)
     ImGuiIO& io = ImGui::GetIO();
-    std::string font_path = core::get_resource_path("fonts/Inter-Regular.ttf");
-    io.Fonts->AddFontFromFileTTF(font_path.c_str(), 16.0f);
+    std::string font_regular_path = core::get_resource_path("fonts/Inter-Regular.ttf");
+    std::string font_bold_path = core::get_resource_path("fonts/Inter-Bold.ttf");
+    io.Fonts->AddFontFromFileTTF(font_regular_path.c_str(), 16.0f); // Default font (index 0)
+    io.Fonts->AddFontFromFileTTF(font_bold_path.c_str(), 16.0f);    // Bold font (index 1)
 
     // Setup Catppuccin colormap for ImPlot
     setup_catppuccin_colormap();

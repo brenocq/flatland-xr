@@ -7,13 +7,14 @@
 #include <gui/panels/perception_output_panel.hpp>
 #include <gui/plot.hpp>
 #include <gui/ui_state.hpp>
+#include <gui/widgets/text.hpp>
 
 namespace gui {
 
 void PerceptionOutputPanel::render(const estimation::EstimationResult& est_result, const core::Trajectory2D& gt_trajectory,
                                    const simulation::SimulationResult& sim_result) {
     if (!est_result.is_valid() || !sim_result.is_valid()) {
-        ImGui::Text("No estimation data available.");
+        widgets::Text("No estimation data available.");
         return;
     }
 

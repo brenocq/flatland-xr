@@ -8,6 +8,7 @@
 #include <gui/panels/world_editor_panel.hpp>
 #include <gui/plot.hpp>
 #include <gui/ui_state.hpp>
+#include <gui/widgets/text.hpp>
 #include <simulation/simulation.hpp>
 
 namespace gui {
@@ -177,7 +178,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
     }
     ImGui::Separator();
 
-    ImGui::TextWrapped("Ctrl+Click: Add new landmark | Ctrl+Drag: Draw trajectory");
+    widgets::TextWrapped("Ctrl+Click: Add new landmark | Ctrl+Drag: Draw trajectory");
     ImGui::SameLine();
     if (ImGui::Button("Clear trajectory")) {
         gt_pose_raw.clear();
@@ -186,7 +187,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
         world_changed = true;
     }
 
-    ImGui::TextWrapped("Right-click landmark: Delete");
+    widgets::TextWrapped("Right-click landmark: Delete");
     ImGui::SameLine();
     if (ImGui::Button("Clear all landmarks")) {
         landmarks.clear();
@@ -194,7 +195,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
         world_changed = true;
     }
 
-    ImGui::TextWrapped("Shift+Drag: Draw wall");
+    widgets::TextWrapped("Shift+Drag: Draw wall");
     ImGui::SameLine();
     if (ImGui::Button("Clear all walls")) {
         walls.clear();
@@ -457,7 +458,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
             }
 
             if (ImGui::BeginPopup(("LandmarkContext" + std::to_string(i)).c_str())) {
-                ImGui::Text("Landmark %zu", i);
+                widgets::Text("Landmark %zu", i);
                 ImGui::Separator();
                 if (ImGui::MenuItem("Delete")) {
                     landmark_to_delete = static_cast<int>(i);
@@ -501,7 +502,7 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
             }
 
             if (ImGui::BeginPopup(("WallContext" + std::to_string(w)).c_str())) {
-                ImGui::Text("Wall %zu (%zu segments)", w, !wall.points.empty() ? wall.points.size() - 1 : 0);
+                widgets::Text("Wall %zu (%zu segments)", w, !wall.points.empty() ? wall.points.size() - 1 : 0);
                 ImGui::Separator();
                 if (ImGui::MenuItem("Delete")) {
                     wall_to_delete = static_cast<int>(w);
