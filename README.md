@@ -4,6 +4,10 @@
  <img width="150" src="https://github.com/user-attachments/assets/948be9e2-f2f2-43d5-b114-468c9c3752e9"/>
 </div>
 
+<p align="center">
+Welcome to the Spatial Computing revolution... for A Square.
+</p>
+
 <div align="center">
   <img src="https://github.com/brenocq/flatland-xr/actions/workflows/linux.yml/badge.svg" alt="🐧 Linux"/>
   <img src="https://github.com/brenocq/flatland-xr/actions/workflows/macos.yml/badge.svg" alt="🍎 MacOS"/>
@@ -24,8 +28,6 @@
 - [📜 License](#-license)
 
 ## 📖 Introduction
-
-**Welcome to the Spatial Computing revolution... for A Square.**
 
 Imagine if the engineers at a tech giant were tasked with building XR glasses for the inhabitants of Edwin Abbott's novella, Flatland. How do you SLAM your way out when the universe only has 3 degrees of freedom? How do you do Visual Odometry when your "image" is just a 1D strip of pixels?
 
