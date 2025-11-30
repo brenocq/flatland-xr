@@ -10,6 +10,19 @@
   <img src="https://github.com/brenocq/flatland-xr/actions/workflows/windows.yml/badge.svg" alt="🪟 Windows"/>
 </div>
 
+## 📋 Table of Contents
+
+- [📖 Introduction](#-introduction)
+- [🚀 Project Overview](#-project-overview)
+- [🏁 Getting Started](#-getting-started)
+- [📐 The Math of Flatland](#-the-math-of-flatland)
+  - [📍 State Representation](#-state-representation)
+  - [📡 Sensor Models](#-sensor-models)
+    - [📷 1D Line-Scan Camera](#-1d-line-scan-camera)
+    - [🧭 2D IMU](#-2d-imu)
+- [🤝 Contributing](#-contributing)
+- [📜 License](#-license)
+
 ## 📖 Introduction
 
 **Welcome to the Spatial Computing revolution... for A Square.**
@@ -28,9 +41,16 @@ This repository contains a full-stack perception pipeline:
  - **Backend**: A choice of state-of-the-art estimators (MSCKF, Factor Graph) to fuse visual and inertial data.
  - **Visualization**: A real-time dashboard using ImGui and ImPlot to analyze residuals, covariance ellipses, and trajectory drift.
 
+## 🏁 Getting Started
+
+```
+cmake -B build && cmake --build build
+./build/flatland-xr
+```
+
 ## 📐 The Math of Flatland
 
-### State Representation
+### 📍 State Representation
 
 In Flatland, the pose of a rigid body is defined as $\mathbf{T} \in SE(2)$, consisting of position $(x, y) \in \mathbb{R}^2$ and orientation $\theta \in (-\pi, \pi]$. The rotation matrix is given by:
 
@@ -43,11 +63,9 @@ $$
 \in SO(2)
 $$
 
----
+### 📡 Sensor Models
 
-### Sensor Models
-
-#### 1. 1D Line-Scan Camera
+#### 📷 1D Line-Scan Camera
 
 The 1D line-scan camera performs a projective transformation mapping 2D points in the Euclidean plane $\mathbb{R}^2$ to the 1D projective line $\mathbb{P}^1$.
 
@@ -157,11 +175,9 @@ $$
 \tilde{u} = u + \eta_u, \quad \eta_u \sim \mathcal{N}(0, \sigma_u^2)
 $$
 
----
+#### 🧭 2D IMU
 
-#### 2. 2D Inertial Measurement Unit (IMU)
-
-The IMU consists of a 2-axis accelerometer and a 1-axis gyroscope. It measures specific force and angular velocity expressed in the Body frame $\{B\}$.
+The Inertial Measurement Unit (IMU) consists of a 2-axis accelerometer and a 1-axis gyroscope. It measures specific force and angular velocity expressed in the Body frame $\{B\}$.
 
 **Definitions:**
 - ${}\_{W}\mathbf{g} = [0, -g]^\top$: Gravity vector in the World frame (pointing "South").
@@ -217,13 +233,6 @@ Let the state be defined as orientation $\theta\_k$, velocity ${}\_{W}\mathbf{v}
   $$
   {}_{W}\hat{\mathbf{p}}_{k+1} = {}_{W}\hat{\mathbf{p}}_k + {}_{W}\hat{\mathbf{v}}_k \Delta t + \frac{1}{2} {}_{W}\hat{\mathbf{a}}_k \Delta t^2
   $$
-
-## 🛠️ Usage
-
-```
-cmake -B build && cmake --build build
-./build/flatland-xr
-```
 
 ## 🤝 Contributing
 
