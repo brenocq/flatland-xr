@@ -14,7 +14,6 @@ jobs:
       matrix:
         compiler:
           - { cc: clang, cxx: clang++ }
-          - { cc: gcc-13, cxx: g++-13 }
 
     steps:
       - uses: actions/checkout@v6
