@@ -58,7 +58,6 @@ class App {
 
     //----- World & ground-truth states -----//
     world::Preset _current_preset = world::Preset::Custom;
-    world::Preset _pending_preset = world::Preset::Custom; ///< Preset to load (set by panel)
 
     // Trajectory
     std::vector<Eigen::Vector3f> _gt_pose_raw; ///< Raw poses from mouse input (x, y, orientation)
