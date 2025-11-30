@@ -7,6 +7,8 @@
 #include <gui/plot.hpp>
 #include <sensors/camera2d.hpp>
 
+namespace gui {
+
 void plot_2d_path(const std::string& label, const std::vector<Eigen::Vector2f>& positions, const Color& color, float weight) {
     plot_2d_line(label, positions, color, weight);
 }
@@ -158,3 +160,5 @@ void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& positi
         ImPlot::PlotLine(label.c_str(), &ray[0].x(), &ray[0].y(), ray.size(), ImPlotLineFlags_None, 0, sizeof(Eigen::Vector2f));
     }
 }
+
+} // namespace gui

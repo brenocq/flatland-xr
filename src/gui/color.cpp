@@ -4,6 +4,8 @@
 #include <array>
 #include <gui/color.hpp>
 
+namespace gui {
+
 namespace {
 // 64 distinct, visually pleasing colors shuffled for maximum contrast between adjacent indices
 constexpr std::array<std::array<float, 3>, 64> palette = {{
@@ -78,3 +80,5 @@ Color Color::Random(size_t index) {
     const auto& c = palette[index % palette.size()];
     return Color(c[0], c[1], c[2]);
 }
+
+} // namespace gui

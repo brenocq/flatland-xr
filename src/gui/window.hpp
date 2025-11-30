@@ -7,6 +7,8 @@
 
 struct GLFWwindow;
 
+namespace gui {
+
 class Window {
   public:
     Window(const std::string& name, size_t width, size_t height);
@@ -33,3 +35,5 @@ class Window {
 
     GLFWwindow* _window;
 };
+
+} // namespace gui

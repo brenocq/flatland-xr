@@ -10,6 +10,8 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+namespace gui {
+
 Window::Window(const std::string& name, size_t width, size_t height) : _name(name), _width(width), _height(height), _window(nullptr) {}
 
 // Callback to handle GLFW errors
@@ -105,3 +107,5 @@ void Window::end_frame() {
     // Swap buffers
     glfwSwapBuffers(_window);
 }
+
+} // namespace gui

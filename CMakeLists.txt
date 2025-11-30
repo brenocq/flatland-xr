@@ -89,6 +89,12 @@ set(EXE_SOURCE
     ${exe_SOURCE_DIR}/gui/color.cpp
     ${exe_SOURCE_DIR}/gui/plot.cpp
     ${exe_SOURCE_DIR}/gui/window.cpp
+    # GUI Panels
+    ${exe_SOURCE_DIR}/gui/panels/config_panel.cpp
+    ${exe_SOURCE_DIR}/gui/panels/error_metrics_panel.cpp
+    ${exe_SOURCE_DIR}/gui/panels/measurements_panel.cpp
+    ${exe_SOURCE_DIR}/gui/panels/perception_output_panel.cpp
+    ${exe_SOURCE_DIR}/gui/panels/world_editor_panel.cpp
 )
 add_executable(flatland-xr ${EXE_SOURCE})
 target_include_directories(flatland-xr PRIVATE ${exe_SOURCE_DIR} ${exe_SOURCE_DIR}/core ${exe_SOURCE_DIR}/sensors ${exe_SOURCE_DIR}/simulation ${exe_SOURCE_DIR}/world ${eigen_SOURCE_DIR})

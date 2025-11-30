@@ -6,6 +6,8 @@
 #include "imgui.h"
 #include <Eigen/Dense>
 
+namespace gui {
+
 class Color : public Eigen::Vector4f {
   public:
     Color(float r, float g, float b, float a = 1.0f) : Eigen::Vector4f(r, g, b, a) {}
@@ -33,3 +35,5 @@ class Color : public Eigen::Vector4f {
     static Color White() { return Color(1.0f, 1.0f, 1.0f); }
     static Color Random(size_t index);
 };
+
+} // namespace gui

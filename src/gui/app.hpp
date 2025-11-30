@@ -6,11 +6,18 @@
 #include <Eigen/Dense>
 #include <core/trajectory2d.hpp>
 #include <core/types.hpp>
+#include <gui/panels/config_panel.hpp>
+#include <gui/panels/error_metrics_panel.hpp>
+#include <gui/panels/measurements_panel.hpp>
+#include <gui/panels/perception_output_panel.hpp>
+#include <gui/panels/world_editor_panel.hpp>
 #include <sensors/camera2d.hpp>
 #include <sensors/imu2d.hpp>
 #include <simulation/simulation.hpp>
 #include <vector>
 #include <world/world.hpp>
+
+namespace gui {
 
 class App {
   public:
@@ -29,32 +36,11 @@ class App {
     /// Render the app's ImGui window
     void render();
 
-    /// Render config header to setup simulation parameters. Returns true if the config changed.
-    bool render_config();
-
-    /// Render world editor for drawing trajectory and placing landmarks. Returns true if world changed.
-    bool render_world_editor();
-
-    /// Render sensor measurements
-    void render_measurements();
-
-    /// Render perception output
-    void render_perception_output();
-
-    /// Render error metrics
-    void render_error_metrics();
-
-    /// Smooth raw poses and build trajectory
-    void build_trajectory_from_raw_poses();
-
     /// Simulate the sensor measurements
     void simulate();
 
     /// Estimate state given sensor measurements
     void estimate();
-
-    /// Smooth raw wall points and build simplified wall
-    void build_wall_from_raw_points();
 
     /// Load a world preset
     void load_world_preset(world::Preset preset);
@@ -71,6 +57,7 @@ class App {
 
     //----- World & ground-truth states -----//
     world::Preset _current_preset = world::Preset::Custom;
+    world::Preset _pending_preset = world::Preset::Custom; ///< Preset to load (set by panel)
 
     // Trajectory
     std::vector<Eigen::Vector3f> _gt_pose_raw; ///< Raw poses from mouse input (x, y, orientation)
@@ -89,4 +76,13 @@ class App {
     //----- Estimated data -----//
     std::vector<Eigen::Vector3f> _est_poses; ///< Estimated poses (x, y, theta)
     std::vector<Eigen::Vector2f> _est_vel;   ///< Estimated velocities (vx, vy)
+
+    //----- GUI panels -----//
+    ConfigPanel _config_panel;
+    WorldEditorPanel _world_editor_panel;
+    MeasurementsPanel _measurements_panel;
+    PerceptionOutputPanel _perception_output_panel;
+    ErrorMetricsPanel _error_metrics_panel;
 };
+
+} // namespace gui

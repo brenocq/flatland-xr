@@ -5,8 +5,8 @@
 #include <gui/window.hpp>
 
 int main() {
-    Window window("Flatland XR", 1200, 800);
-    App app;
+    gui::Window window("Flatland XR", 1200, 800);
+    gui::App app;
 
     // Setup
     if (!window.create())

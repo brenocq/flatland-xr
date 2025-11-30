@@ -17,6 +17,8 @@ struct LandmarkObservation;
 class Camera2D;
 } // namespace sensors
 
+namespace gui {
+
 void plot_2d_path(const std::string& label, const std::vector<Eigen::Vector2f>& positions, const Color& color = Color::Auto(), float weight = -1.0f);
 void plot_2d_line(const std::string& label, const std::vector<Eigen::Vector2f>& positions, const Color& color = Color::Auto(), float weight = -1.0f);
 void plot_2d_scatter(const std::string& label, const std::vector<Eigen::Vector2f>& positions, const Color& color = Color::Auto(), float size = -1.0f);
@@ -35,3 +37,5 @@ void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f
 /// Plot rays from camera center to observed landmarks (colored by landmark ID)
 void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& position, const std::vector<Eigen::Vector2f>& landmarks,
                          const std::vector<sensors::LandmarkObservation>& observations, float weight = -1.0f);
+
+} // namespace gui
