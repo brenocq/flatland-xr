@@ -12,9 +12,9 @@
 
 ## 📖 Introduction
 
-**Welcome to the Spatial Computing revolution... for A. Square.**
+**Welcome to the Spatial Computing revolution... for A Square.**
 
-Imagine if the engineers at a tech giant were tasked with building XR glasses for the inhabitants of Edwin Abbott's novella, Flatland. How do you perform 6-DoF tracking when the universe only has 3 degrees of freedom? How do you do Visual Odometry when your "image" is just a 1D strip of pixels?
+Imagine if the engineers at a tech giant were tasked with building XR glasses for the inhabitants of Edwin Abbott's novella, Flatland. How do you SLAM your way out when the universe only has 3 degrees of freedom? How do you do Visual Odometry when your "image" is just a 1D strip of pixels?
 
 **Flatland XR** is a serious educational sandbox disguised as a geometry joke. It implements a production-grade Visual-Inertial Odometry (VIO) stack, but mathematically projected down to a 2D world.
 
@@ -35,11 +35,11 @@ This repository contains a full-stack perception pipeline:
 In Flatland, the pose of a rigid body is defined as $\mathbf{T} \in SE(2)$, consisting of position $(x, y) \in \mathbb{R}^2$ and orientation $\theta \in (-\pi, \pi]$. The rotation matrix is given by:
 
 $$
-\mathbf{R}(\theta) = 
-\begin{bmatrix} 
-\cos\theta & -\sin\theta \\ 
-\sin\theta & \cos\theta 
-\end{bmatrix} 
+\mathbf{R}(\theta) =
+\begin{bmatrix}
+\cos\theta & -\sin\theta \\
+\sin\theta & \cos\theta
+\end{bmatrix}
 \in SO(2)
 $$
 
@@ -66,7 +66,7 @@ Let the camera pose be defined by the rotation ${}\_{W}\mathbf{R}\_{C} \in SO(2)
 The landmark is transformed into the Camera frame via the rigid body transformation:
 
 $$
-{}_{C}\mathbf{l} = {}_{W}\mathbf{R}_{C}^\top \left( {}_{W}\mathbf{l} - {}_{W}\mathbf{p}_{C} \right) = 
+{}_{C}\mathbf{l} = {}_{W}\mathbf{R}_{C}^\top \left( {}_{W}\mathbf{l} - {}_{W}\mathbf{p}_{C} \right) =
 \begin{bmatrix}
   {}_C l_x \\
   {}_C l_y
@@ -80,7 +80,7 @@ $$
  1.  **Projection to Normalized Coordinates:**
 
      First, the point ${}\_{C}\mathbf{l} = [{}\_C l\_x, {}\_C l\_y]^\top$ is projected onto the normalized image plane (at $x=1$) to obtain the homogeneous normalized coordinate $\hat{\mathbf{x}}$:
-     
+
  $$
  \hat{\mathbf{x}} = \boldsymbol{\pi}({}_{C}\mathbf{l}) =
  \begin{bmatrix}
@@ -88,9 +88,9 @@ $$
   1
  \end{bmatrix}
  $$
- 
+
  2.  **Intrinsic Scaling:**
-    
+
    We map the normalized coordinate to the pixel frame using the Intrinsic Matrix $\mathbf{K} \in \mathbb{R}^{2 \times 2}$:
 
    $$
@@ -106,15 +106,15 @@ $$
      0 & 1
    \end{bmatrix}
    $$
-   
+
    - $f_x$: Focal length (pixels)
    - $c_x$: Principal point (pixels)
-   
+
    Carrying out the multiplication yields the homogeneous pixel coordinate:
-   
+
    $$
    \begin{aligned}
-   \tilde{\mathbf{u}} &= 
+   \tilde{\mathbf{u}} &=
    \begin{bmatrix}
      f_x & c_x \\
      0 & 1
@@ -133,7 +133,7 @@ $$
    \end{bmatrix}
    \end{aligned}
    $$
-   
+
    Thus recovering the scalar pixel coordinate $u$.
 
 **Visibility Constraints:**
@@ -204,7 +204,7 @@ Let the state be defined as orientation $\theta\_k$, velocity ${}\_{W}\mathbf{v}
 
 2.  **Velocity Update:**
   First, we reconstruct the world-frame acceleration from the measurement:
-    
+
   $$
   \begin{aligned}
   {}_{W}\hat{\mathbf{a}}_k &= {}_{W}\hat{\mathbf{R}}_{B}(\hat{\theta}_k) \left( {}_{B}\tilde{\mathbf{a}}_k - \hat{\mathbf{b}}_{a, k} \right) + {}_{W}\mathbf{g} \\
@@ -213,7 +213,7 @@ Let the state be defined as orientation $\theta\_k$, velocity ${}\_{W}\mathbf{v}
   $$
 
 3.  **Position Update:**
-   
+
   $$
   {}_{W}\hat{\mathbf{p}}_{k+1} = {}_{W}\hat{\mathbf{p}}_k + {}_{W}\hat{\mathbf{v}}_k \Delta t + \frac{1}{2} {}_{W}\hat{\mathbf{a}}_k \Delta t^2
   $$
