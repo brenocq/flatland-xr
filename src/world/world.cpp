@@ -245,7 +245,7 @@ World load_preset(Preset preset) {
 
 std::vector<Eigen::Vector3f> interpolate_trajectory(const std::vector<Eigen::Vector3f>& keypoints, int num_poses) {
     if (keypoints.size() < 2) {
-        return keypoints;
+        return {};
     }
 
     std::vector<Eigen::Vector3f> dense_poses;

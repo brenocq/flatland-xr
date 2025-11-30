@@ -92,9 +92,13 @@ std::optional<float> Camera2D::measure(const Eigen::Vector3f& pose, const Eigen:
         return std::nullopt;
     }
 
-    // Add Gaussian noise
-    std::normal_distribution<float> noise(0.0f, _noise_std);
-    float noisy_u = u.value() + noise(_rng);
+    float noisy_u = u.value();
+
+    // Add Gaussian noise only if noise_std > 0
+    if (_noise_std > 0.0f) {
+        std::normal_distribution<float> noise(0.0f, _noise_std);
+        noisy_u += noise(_rng);
+    }
 
     // Clamp to image bounds
     noisy_u = std::clamp(noisy_u, 0.0f, static_cast<float>(_width));

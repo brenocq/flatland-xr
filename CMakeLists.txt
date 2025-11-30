@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 project(flatland-xr LANGUAGES CXX C)
 
+# Options
+option(BUILD_TESTS "Build unit tests" ON)
+
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -70,39 +73,112 @@ add_library(implot STATIC ${IMPLOT_SOURCE})
 target_include_directories(implot PUBLIC ${implot_SOURCE_DIR})
 target_link_libraries(implot PUBLIC imgui)
 
-# Setup executable
-set(exe_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(EXE_SOURCE
-    ${exe_SOURCE_DIR}/main.cpp
-    # Core
-    ${exe_SOURCE_DIR}/core/geometry.cpp
-    ${exe_SOURCE_DIR}/core/trajectory2d.cpp
-    # Sensors
-    ${exe_SOURCE_DIR}/sensors/camera2d.cpp
-    ${exe_SOURCE_DIR}/sensors/imu2d.cpp
-    # Simulation
-    ${exe_SOURCE_DIR}/simulation/simulation.cpp
-    # World
-    ${exe_SOURCE_DIR}/world/world.cpp
-    # Estimation
-    ${exe_SOURCE_DIR}/estimation/imu_integrator.cpp
-    # GUI
-    ${exe_SOURCE_DIR}/gui/app.cpp
-    ${exe_SOURCE_DIR}/gui/color.cpp
-    ${exe_SOURCE_DIR}/gui/plot.cpp
-    ${exe_SOURCE_DIR}/gui/window.cpp
-    # GUI Panels
-    ${exe_SOURCE_DIR}/gui/panels/config_panel.cpp
-    ${exe_SOURCE_DIR}/gui/panels/error_metrics_panel.cpp
-    ${exe_SOURCE_DIR}/gui/panels/measurements_panel.cpp
-    ${exe_SOURCE_DIR}/gui/panels/perception_output_panel.cpp
-    ${exe_SOURCE_DIR}/gui/panels/world_editor_panel.cpp
+# ============================================================================
+# Module Libraries
+# ============================================================================
+set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+# Core library
+add_library(flatland-core STATIC
+    ${SRC_DIR}/core/geometry.cpp
+    ${SRC_DIR}/core/trajectory2d.cpp
 )
-add_executable(flatland-xr ${EXE_SOURCE})
-target_include_directories(flatland-xr PRIVATE ${exe_SOURCE_DIR} ${exe_SOURCE_DIR}/core ${exe_SOURCE_DIR}/sensors ${exe_SOURCE_DIR}/simulation ${exe_SOURCE_DIR}/world ${eigen_SOURCE_DIR})
-target_link_libraries(flatland-xr PRIVATE implot Eigen3::Eigen)
+target_include_directories(flatland-core PUBLIC ${SRC_DIR})
+target_link_libraries(flatland-core PUBLIC Eigen3::Eigen)
+
+# Sensors library
+add_library(flatland-sensors STATIC
+    ${SRC_DIR}/sensors/camera2d.cpp
+    ${SRC_DIR}/sensors/imu2d.cpp
+)
+target_include_directories(flatland-sensors PUBLIC ${SRC_DIR})
+target_link_libraries(flatland-sensors PUBLIC flatland-core)
+
+# World library
+add_library(flatland-world STATIC
+    ${SRC_DIR}/world/world.cpp
+)
+target_include_directories(flatland-world PUBLIC ${SRC_DIR})
+target_link_libraries(flatland-world PUBLIC flatland-core)
+
+# Simulation library
+add_library(flatland-simulation STATIC
+    ${SRC_DIR}/simulation/simulation.cpp
+)
+target_include_directories(flatland-simulation PUBLIC ${SRC_DIR})
+target_link_libraries(flatland-simulation PUBLIC flatland-core flatland-sensors flatland-world)
+
+# Estimation library
+add_library(flatland-estimation STATIC
+    ${SRC_DIR}/estimation/imu_integrator.cpp
+)
+target_include_directories(flatland-estimation PUBLIC ${SRC_DIR})
+target_link_libraries(flatland-estimation PUBLIC flatland-core flatland-sensors)
+
+# GUI library (depends on ImGui/ImPlot)
+add_library(flatland-gui STATIC
+    ${SRC_DIR}/gui/app.cpp
+    ${SRC_DIR}/gui/color.cpp
+    ${SRC_DIR}/gui/plot.cpp
+    ${SRC_DIR}/gui/window.cpp
+    ${SRC_DIR}/gui/panels/config_panel.cpp
+    ${SRC_DIR}/gui/panels/error_metrics_panel.cpp
+    ${SRC_DIR}/gui/panels/measurements_panel.cpp
+    ${SRC_DIR}/gui/panels/perception_output_panel.cpp
+    ${SRC_DIR}/gui/panels/world_editor_panel.cpp
+)
+target_include_directories(flatland-gui PUBLIC ${SRC_DIR})
+target_link_libraries(flatland-gui PUBLIC flatland-simulation flatland-estimation implot)
+
+# ============================================================================
+# Main Executable
+# ============================================================================
+add_executable(flatland-xr ${SRC_DIR}/main.cpp)
+target_link_libraries(flatland-xr PRIVATE flatland-gui)
 
 # Silence OpenGL deprecation warnings on macOS
 if(APPLE)
     target_compile_definitions(flatland-xr PRIVATE GL_SILENCE_DEPRECATION)
+endif()
+
+# ============================================================================
+# Testing
+# ============================================================================
+if(BUILD_TESTS)
+    enable_testing()
+
+    # Setup Google Test
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY "https://github.com/google/googletest"
+        GIT_TAG "v1.14.0"
+        GIT_SHALLOW TRUE
+    )
+    # Prevent overriding the parent project's compiler/linker settings on Windows
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+
+    # Test sources
+    set(TEST_SOURCE
+        tests/core/test_geometry.cpp
+        tests/core/test_trajectory2d.cpp
+        tests/core/test_types.cpp
+        tests/sensors/test_camera2d.cpp
+        tests/sensors/test_imu2d.cpp
+        tests/simulation/test_simulation.cpp
+        tests/world/test_world.cpp
+        tests/estimation/test_imu_integrator.cpp
+    )
+    add_executable(flatland-tests ${TEST_SOURCE})
+    target_link_libraries(flatland-tests PRIVATE
+        flatland-core
+        flatland-sensors
+        flatland-world
+        flatland-simulation
+        flatland-estimation
+        GTest::gtest_main
+    )
+
+    include(GoogleTest)
+    gtest_discover_tests(flatland-tests)
 endif()
