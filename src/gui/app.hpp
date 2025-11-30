@@ -9,9 +9,7 @@
 #include <sensors/camera2d.hpp>
 #include <sensors/imu2d.hpp>
 #include <vector>
-
-/// World preset identifiers
-enum class WorldPreset { Custom = 0, ASquaresHouse, VisitFromSphere, HallOfCouncil, COUNT };
+#include <world/world.hpp>
 
 class App {
   public:
@@ -64,7 +62,7 @@ class App {
     std::vector<Eigen::Vector2f> filter_visible_landmarks(const Eigen::Vector2f& camera_pos) const;
 
     /// Load a world preset
-    void load_world_preset(WorldPreset preset);
+    void load_world_preset(world::Preset preset);
 
     bool _first_render = true;
 
@@ -77,7 +75,7 @@ class App {
     Eigen::Vector2f _gravity = Eigen::Vector2f::Zero(); ///< World gravity vector (zero for 2D planar)
 
     //----- World & ground-truth states -----//
-    WorldPreset _current_preset = WorldPreset::Custom;
+    world::Preset _current_preset = world::Preset::Custom;
 
     // Trajectory
     std::vector<Eigen::Vector3f> _gt_pose_raw; ///< Raw poses from mouse input (x, y, orientation)
