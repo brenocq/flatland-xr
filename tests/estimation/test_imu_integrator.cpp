@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include <cmath>
+#include <core/math.hpp>
 #include <estimation/imu_integrator.hpp>
 #include <gtest/gtest.h>
 
@@ -171,7 +172,7 @@ TEST_F(IMUIntegratorTest, BiasCompensation) {
 TEST_F(IMUIntegratorTest, RotatedAcceleration) {
     integrator.set_gravity(Eigen::Vector2f::Zero());
     // Start with 90 degree rotation (looking along +y)
-    integrator.initialize(Eigen::Vector3f(0, 0, M_PI / 2), Eigen::Vector2f::Zero());
+    integrator.initialize(Eigen::Vector3f(0, 0, core::HALF_PI), Eigen::Vector2f::Zero());
 
     // Body frame acceleration in x (forward)
     IMUMeasurement imu_meas;

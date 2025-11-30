@@ -15,17 +15,11 @@ inline constexpr float DEG_TO_RAD = 0.01745329251994329577F;
 inline constexpr float RAD_TO_DEG = 57.29577951308232087680F;
 
 // Convenience conversion functions
-constexpr float deg_to_rad(float degrees) {
-    return degrees * DEG_TO_RAD;
-}
+constexpr float deg_to_rad(float degrees) { return degrees * DEG_TO_RAD; }
 
-constexpr float rad_to_deg(float radians) {
-    return radians * RAD_TO_DEG;
-}
+constexpr float rad_to_deg(float radians) { return radians * RAD_TO_DEG; }
 
 // Euclidean distance helper (avoids sqrtf/powf which aren't standard)
-inline float distance(float dx, float dy) {
-    return static_cast<float>(std::sqrt(static_cast<double>(dx * dx + dy * dy)));
-}
+inline float distance(float dx, float dy) { return static_cast<float>(std::sqrt(static_cast<double>(dx * dx + dy * dy))); }
 
-}  // namespace core
+} // namespace core

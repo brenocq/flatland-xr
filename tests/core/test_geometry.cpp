@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <core/geometry.hpp>
+#include <core/math.hpp>
 #include <gtest/gtest.h>
 
 using namespace core;
@@ -134,7 +135,7 @@ TEST(PointToSegmentDistance, DegenerateSegment) {
     Eigen::Vector2f point(1, 1);
     Eigen::Vector2f seg_start(0, 0), seg_end(0, 0);
     float dist = point_to_segment_distance(point, seg_start, seg_end);
-    EXPECT_NEAR(dist, std::sqrtf(2.0f), 1e-5f);
+    EXPECT_NEAR(dist, std::sqrt(2.0f), 1e-5f);
 }
 
 // ============================================================================
@@ -147,27 +148,27 @@ TEST(NormalizeAngle, AngleInRange) {
 }
 
 TEST(NormalizeAngle, AngleAbovePi) {
-    float angle = M_PI + 0.5f;
+    float angle = core::PI + 0.5f;
     float normalized = normalize_angle(angle);
-    EXPECT_NEAR(normalized, -M_PI + 0.5f, 1e-5f);
+    EXPECT_NEAR(normalized, -core::PI + 0.5f, 1e-5f);
 }
 
 TEST(NormalizeAngle, AngleBelowNegativePi) {
-    float angle = -M_PI - 0.5f;
+    float angle = -core::PI - 0.5f;
     float normalized = normalize_angle(angle);
-    EXPECT_NEAR(normalized, M_PI - 0.5f, 1e-5f);
+    EXPECT_NEAR(normalized, core::PI - 0.5f, 1e-5f);
 }
 
 TEST(NormalizeAngle, MultipleTwoPi) {
-    float angle = 4 * M_PI + 0.3f;
+    float angle = 4.0f * core::PI + 0.3f;
     float normalized = normalize_angle(angle);
     EXPECT_NEAR(normalized, 0.3f, 1e-5f);
 }
 
 TEST(NormalizeAngle, ExactlyPi) {
     // Pi should stay as pi (or close to it)
-    float normalized = normalize_angle(M_PI);
-    EXPECT_TRUE(std::abs(normalized) <= M_PI + 1e-5f);
+    float normalized = normalize_angle(core::PI);
+    EXPECT_TRUE(std::abs(normalized) <= core::PI + 1e-5f);
 }
 
 // ============================================================================
@@ -183,13 +184,13 @@ TEST(AngleDifference, WrapAroundPositive) {
     // From -3 to 3: the raw difference is 6, which wraps to 6-2pi ~ -0.283
     float diff = angle_difference(-3.0f, 3.0f);
     // The shortest path from -3 to 3 is actually the negative direction
-    EXPECT_NEAR(std::abs(diff), 2 * M_PI - 6.0f, 1e-5f);
+    EXPECT_NEAR(std::abs(diff), 2.0f * core::PI - 6.0f, 1e-5f);
 }
 
 TEST(AngleDifference, WrapAroundNegative) {
     float diff = angle_difference(3.0f, -3.0f);
     // The shortest path from 3 to -3 is the positive direction
-    EXPECT_NEAR(std::abs(diff), 2 * M_PI - 6.0f, 1e-5f);
+    EXPECT_NEAR(std::abs(diff), 2.0f * core::PI - 6.0f, 1e-5f);
 }
 
 TEST(AngleDifference, SameAngle) { EXPECT_NEAR(angle_difference(1.0f, 1.0f), 0.0f, 1e-5f); }
@@ -228,7 +229,7 @@ TEST(UnwrapAngles, WrappingPositive) {
     EXPECT_NEAR(result[0], 3.0f, 1e-5f);
     // The difference should be small (not ~6)
     float diff = result[1] - result[0];
-    EXPECT_TRUE(std::abs(diff) < M_PI + 0.1f);
+    EXPECT_TRUE(std::abs(diff) < core::PI + 0.1f);
 }
 
 TEST(UnwrapAngles, ContinuousRotation) {

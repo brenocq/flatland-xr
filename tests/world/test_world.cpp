@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include <cmath>
+#include <core/math.hpp>
 #include <gtest/gtest.h>
 #include <world/world.hpp>
 
@@ -221,7 +222,7 @@ TEST(InterpolateTrajectory, CurvedPathOrientationChanges) {
     std::vector<Eigen::Vector3f> keypoints = {
         {0, 0, 0},
         {5, 0, 0},
-        {5, 5, M_PI / 2}, // Turn 90 degrees
+        {5, 5, core::HALF_PI}, // Turn 90 degrees
     };
     auto result = interpolate_trajectory(keypoints, 20);
 

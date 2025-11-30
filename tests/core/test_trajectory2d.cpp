@@ -23,8 +23,8 @@ class Trajectory2DTest : public ::testing::Test {
         circular_poses.clear();
         for (int i = 0; i <= 8; i++) {
             float angle = static_cast<float>(i) * core::PI / 8.0f;
-            float x = std::cosf(angle);
-            float y = std::sinf(angle);
+            float x = std::cos(angle);
+            float y = std::sin(angle);
             circular_poses.push_back(Eigen::Vector3f(x, y, angle + core::HALF_PI));
         }
     }

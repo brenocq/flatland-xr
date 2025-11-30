@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include <cmath>
+#include <core/math.hpp>
 #include <core/trajectory2d.hpp>
 #include <core/types.hpp>
 #include <gtest/gtest.h>
@@ -23,7 +24,7 @@ class SimulationTest : public ::testing::Test {
         trajectory.build(poses);
 
         // Set up sensors
-        camera.set_intrinsics(100, M_PI / 2);
+        camera.set_intrinsics(100, core::HALF_PI);
         camera.set_noise_std(0.0f);
         imu.set_acc_bias(Eigen::Vector2f::Zero());
         imu.set_gyr_bias(0.0f);

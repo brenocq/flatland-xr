@@ -20,7 +20,8 @@ void plot_2d_line(const std::string& label, const std::vector<Eigen::Vector2f>& 
         return;
 
     ImPlot::SetNextLineStyle(ImVec4(color), weight);
-    ImPlot::PlotLine(label.c_str(), &positions[0].x(), &positions[0].y(), static_cast<int>(positions.size()), ImPlotLineFlags_None, 0, sizeof(Eigen::Vector2f));
+    ImPlot::PlotLine(label.c_str(), &positions[0].x(), &positions[0].y(), static_cast<int>(positions.size()), ImPlotLineFlags_None, 0,
+                     sizeof(Eigen::Vector2f));
 }
 
 void plot_2d_scatter(const std::string& label, const std::vector<Eigen::Vector2f>& positions, const Color& color, float size) {
@@ -28,7 +29,8 @@ void plot_2d_scatter(const std::string& label, const std::vector<Eigen::Vector2f
         return;
 
     ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, size, ImVec4(color), IMPLOT_AUTO, ImVec4(color));
-    ImPlot::PlotScatter(label.c_str(), &positions[0].x(), &positions[0].y(), static_cast<int>(positions.size()), ImPlotScatterFlags_None, 0, sizeof(Eigen::Vector2f));
+    ImPlot::PlotScatter(label.c_str(), &positions[0].x(), &positions[0].y(), static_cast<int>(positions.size()), ImPlotScatterFlags_None, 0,
+                        sizeof(Eigen::Vector2f));
 }
 
 void plot_2d_camera_frustum(const std::string& label, const Eigen::Vector2f& position, float orientation, float fov, float focal_length,
@@ -52,7 +54,8 @@ void plot_2d_camera_frustum(const std::string& label, const Eigen::Vector2f& pos
     std::vector<Eigen::Vector2f> frustum = {position, left_corner, right_corner, position};
 
     ImPlot::SetNextLineStyle(ImVec4(color), weight);
-    ImPlot::PlotLine(label.c_str(), &frustum[0].x(), &frustum[0].y(), static_cast<int>(frustum.size()), ImPlotLineFlags_None, 0, sizeof(Eigen::Vector2f));
+    ImPlot::PlotLine(label.c_str(), &frustum[0].x(), &frustum[0].y(), static_cast<int>(frustum.size()), ImPlotLineFlags_None, 0,
+                     sizeof(Eigen::Vector2f));
 }
 
 void plot_2d_poses(const std::string& label, const std::vector<Eigen::Vector3f>& poses, const Color& color, float weight, float scatter_size) {

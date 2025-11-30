@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include <cmath>
+#include <core/math.hpp>
 #include <core/types.hpp>
 #include <gtest/gtest.h>
 
@@ -59,7 +60,7 @@ TEST(Pose2D, RotationMatrixBodyToWorldAtZero) {
 }
 
 TEST(Pose2D, RotationMatrixBodyToWorldAt90Degrees) {
-    Pose2D pose(0, 0, M_PI / 2);
+    Pose2D pose(0, 0, core::HALF_PI);
     Eigen::Matrix2f R = pose.R_body_to_world();
     EXPECT_NEAR(R(0, 0), 0.0f, 1e-6f);
     EXPECT_NEAR(R(0, 1), -1.0f, 1e-6f);
@@ -75,7 +76,7 @@ TEST(Pose2D, RotationMatrixWorldToBodyIsTranspose) {
 }
 
 TEST(Pose2D, RotationTransformsVector) {
-    Pose2D pose(0, 0, M_PI / 2);
+    Pose2D pose(0, 0, core::HALF_PI);
     Eigen::Vector2f body_vec(1, 0); // Forward in body frame
     Eigen::Vector2f world_vec = pose.R_body_to_world() * body_vec;
     EXPECT_NEAR(world_vec.x(), 0.0f, 1e-6f);

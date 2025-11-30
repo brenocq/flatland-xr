@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include <cmath>
+#include <core/math.hpp>
 #include <gtest/gtest.h>
 #include <sensors/camera2d.hpp>
 
@@ -10,7 +11,7 @@ using namespace sensors;
 class Camera2DTest : public ::testing::Test {
   protected:
     void SetUp() override {
-        camera.set_intrinsics(100, M_PI / 2); // 100px width, 90 degree FOV
+        camera.set_intrinsics(100, core::HALF_PI); // 100px width, 90 degree FOV
         camera.set_noise_std(1.0f);
     }
 
@@ -23,10 +24,10 @@ class Camera2DTest : public ::testing::Test {
 
 TEST_F(Camera2DTest, SetIntrinsics) {
     Camera2D cam;
-    cam.set_intrinsics(200, M_PI / 3); // 200px, 60 degree FOV
+    cam.set_intrinsics(200, core::PI / 3.0f); // 200px, 60 degree FOV
 
     EXPECT_EQ(cam.width(), 200);
-    EXPECT_NEAR(cam.fov(), M_PI / 3, 1e-5f);
+    EXPECT_NEAR(cam.fov(), core::PI / 3.0f, 1e-5f);
     EXPECT_NEAR(cam.principal_point(), 100.0f, 1e-5f);
 }
 
@@ -40,8 +41,8 @@ TEST_F(Camera2DTest, SetWidthKeepsFOV) {
 }
 
 TEST_F(Camera2DTest, SetFOVAdjustsFocalLength) {
-    camera.set_fov(M_PI / 4); // 45 degrees
-    EXPECT_NEAR(camera.fov(), M_PI / 4, 1e-5f);
+    camera.set_fov(core::PI / 4.0f); // 45 degrees
+    EXPECT_NEAR(camera.fov(), core::PI / 4.0f, 1e-5f);
 }
 
 TEST_F(Camera2DTest, FocalLengthCalculation) {
@@ -117,7 +118,7 @@ TEST_F(Camera2DTest, ProjectLandmarkOutsideFOV) {
 
 TEST_F(Camera2DTest, ProjectWithRotatedCamera) {
     // Camera rotated 90 degrees (looking along +y)
-    Eigen::Vector3f pose(0, 0, M_PI / 2);
+    Eigen::Vector3f pose(0, 0, core::HALF_PI);
     // Landmark along +y direction
     Eigen::Vector2f landmark(0, 5);
 
@@ -199,7 +200,7 @@ TEST_F(Camera2DTest, MeasureLandmark) {
     for (float m : measurements)
         variance += (m - mean) * (m - mean);
     variance /= measurements.size();
-    float std = std::sqrtf(variance);
+    float std = std::sqrt(variance);
 
     // Mean should be close to true value
     EXPECT_NEAR(mean, 50.0f, 1.0f);

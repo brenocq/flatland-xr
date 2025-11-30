@@ -114,11 +114,9 @@ World load_a_squares_house() {
 
     // Trajectory keypoints: A Square moving around his house visiting family
     world.trajectory_keypoints = {
-        {-6.0f, -4.0f, core::QUARTER_PI},     {-5.0f, -1.0f, core::HALF_PI},
-        {-5.0f, 3.0f, core::PI / 3.0f},       {-3.0f, 5.0f, 0.0f},
-        {2.0f, 5.0f, -core::QUARTER_PI},      {5.0f, 2.0f, -core::HALF_PI},
-        {5.0f, -2.0f, -core::HALF_PI},        {3.0f, -5.0f, core::PI},
-        {-1.0f, -5.0f, core::PI},             {-4.0f, -3.0f, 2.0f * core::PI / 3.0f},
+        {-6.0f, -4.0f, core::QUARTER_PI}, {-5.0f, -1.0f, core::HALF_PI},          {-5.0f, 3.0f, core::PI / 3.0f}, {-3.0f, 5.0f, 0.0f},
+        {2.0f, 5.0f, -core::QUARTER_PI},  {5.0f, 2.0f, -core::HALF_PI},           {5.0f, -2.0f, -core::HALF_PI},  {3.0f, -5.0f, core::PI},
+        {-1.0f, -5.0f, core::PI},         {-4.0f, -3.0f, 2.0f * core::PI / 3.0f},
     };
 
     return world;

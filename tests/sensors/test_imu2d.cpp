@@ -133,9 +133,9 @@ TEST_F(IMU2DTest, MeasureWithNoise) {
         var_acc_y += (acc_y[i] - mean_acc_y) * (acc_y[i] - mean_acc_y);
         var_gyr += (gyr[i] - mean_gyr) * (gyr[i] - mean_gyr);
     }
-    float std_acc_x = std::sqrtf(var_acc_x / n_samples);
-    float std_acc_y = std::sqrtf(var_acc_y / n_samples);
-    float std_gyr = std::sqrtf(var_gyr / n_samples);
+    float std_acc_x = std::sqrt(var_acc_x / static_cast<float>(n_samples));
+    float std_acc_y = std::sqrt(var_acc_y / static_cast<float>(n_samples));
+    float std_gyr = std::sqrt(var_gyr / static_cast<float>(n_samples));
 
     // Means should be close to 0
     EXPECT_NEAR(mean_acc_x, 0.0f, 0.02f);
@@ -178,8 +178,8 @@ TEST_F(IMU2DTest, MeasureWithDifferentXYNoise) {
         var_x += (acc_x[i] - mean_x) * (acc_x[i] - mean_x);
         var_y += (acc_y[i] - mean_y) * (acc_y[i] - mean_y);
     }
-    float std_x = std::sqrtf(var_x / n_samples);
-    float std_y = std::sqrtf(var_y / n_samples);
+    float std_x = std::sqrt(var_x / static_cast<float>(n_samples));
+    float std_y = std::sqrt(var_y / static_cast<float>(n_samples));
 
     // Y noise should be larger than X noise
     EXPECT_GT(std_y, std_x * 2.0f);
