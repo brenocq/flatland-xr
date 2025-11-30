@@ -3,14 +3,11 @@
 
 #pragma once
 
+#include "sensor_data.hpp"
 #include <Eigen/Dense>
 #include <random>
 
-/// IMU measurement containing accelerometer and gyroscope readings
-struct IMUMeasurement {
-    Eigen::Vector2f acc; ///< Accelerometer reading (x, y) in m/s²
-    float gyr;           ///< Gyroscope reading in rad/s
-};
+namespace sensors {
 
 /// 2D IMU model storing intrinsic parameters (biases and noise)
 class IMU2D {
@@ -34,28 +31,30 @@ class IMU2D {
     void set_gyr_noise_std(float noise_std);
 
     /// Get accelerometer bias
-    Eigen::Vector2f acc_bias() const;
+    Eigen::Vector2f acc_bias() const { return _acc_bias; }
 
     /// Get gyroscope bias
-    float gyr_bias() const;
+    float gyr_bias() const { return _gyr_bias; }
 
     /// Get accelerometer noise standard deviation
-    Eigen::Vector2f acc_noise_std() const;
+    Eigen::Vector2f acc_noise_std() const { return _acc_noise_std; }
 
     /// Get gyroscope noise standard deviation
-    float gyr_noise_std() const;
+    float gyr_noise_std() const { return _gyr_noise_std; }
 
     /// Generate noisy IMU measurement from ground truth acceleration and angular velocity
-    /// @param gt_acc Ground truth acceleration in world frame (m/s²)
+    /// @param gt_acc Ground truth acceleration in body frame
     /// @param gt_gyr Ground truth angular velocity (rad/s)
     /// @return Noisy IMU measurement with bias and Gaussian noise added
     IMUMeasurement measure(const Eigen::Vector2f& gt_acc, float gt_gyr);
 
   private:
-    Eigen::Vector2f _acc_bias = Eigen::Vector2f::Zero();            ///< Accelerometer bias (x, y) in m/s²
+    Eigen::Vector2f _acc_bias = Eigen::Vector2f::Zero();            ///< Accelerometer bias (x, y)
     float _gyr_bias = 0.0f;                                         ///< Gyroscope bias in rad/s
-    Eigen::Vector2f _acc_noise_std = Eigen::Vector2f(0.01f, 0.01f); ///< Accelerometer noise std (x, y) in m/s²
+    Eigen::Vector2f _acc_noise_std = Eigen::Vector2f(0.01f, 0.01f); ///< Accelerometer noise std
     float _gyr_noise_std = 0.001f;                                  ///< Gyroscope noise std in rad/s
 
     std::mt19937 _rng{std::random_device{}()}; ///< Random number generator
 };
+
+} // namespace sensors

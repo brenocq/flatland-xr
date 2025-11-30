@@ -4,10 +4,10 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <camera2d.hpp>
 #include <core/trajectory2d.hpp>
 #include <core/types.hpp>
-#include <imu2d.hpp>
+#include <sensors/camera2d.hpp>
+#include <sensors/imu2d.hpp>
 #include <vector>
 
 /// World preset identifiers
@@ -69,11 +69,8 @@ class App {
     bool _first_render = true;
 
     //----- Sensor models -----//
-    // Camera model
-    Camera2D _camera;
-
-    // IMU model
-    IMU2D _imu;
+    sensors::Camera2D _camera;
+    sensors::IMU2D _imu;
 
     //----- Simulation parameters -----//
     float _dt = 1.0f;                                   ///< Time step between poses (in index units)
@@ -100,13 +97,11 @@ class App {
     std::vector<Eigen::Vector2f> _wall_raw_points; ///< Raw points while drawing a wall
 
     //----- Simulated measurements -----//
-    // IMU measurements (one per time step)
-    std::vector<IMUMeasurement> _gt_imu; ///< Ground truth IMU (no noise, with bias)
-    std::vector<IMUMeasurement> _imu_measurements;
+    std::vector<sensors::IMUMeasurement> _gt_imu; ///< Ground truth IMU (no noise, with bias)
+    std::vector<sensors::IMUMeasurement> _imu_measurements;
 
-    // Camera measurements (one frame per time step)
-    std::vector<std::vector<LandmarkObservation>> _gt_cam; ///< Ground truth camera (no noise)
-    std::vector<std::vector<LandmarkObservation>> _cam_measurements;
+    std::vector<std::vector<sensors::LandmarkObservation>> _gt_cam; ///< Ground truth camera (no noise)
+    std::vector<std::vector<sensors::LandmarkObservation>> _cam_measurements;
 
     //----- Estimated data -----//
     std::vector<Eigen::Vector3f> _est_poses; ///< Estimated poses (x, y, theta)

@@ -3,6 +3,8 @@
 
 #include "imu2d.hpp"
 
+namespace sensors {
+
 void IMU2D::set_acc_bias(const Eigen::Vector2f& bias) { _acc_bias = bias; }
 
 void IMU2D::set_gyr_bias(float bias) { _gyr_bias = bias; }
@@ -10,14 +12,6 @@ void IMU2D::set_gyr_bias(float bias) { _gyr_bias = bias; }
 void IMU2D::set_acc_noise_std(const Eigen::Vector2f& noise_std) { _acc_noise_std = noise_std; }
 
 void IMU2D::set_gyr_noise_std(float noise_std) { _gyr_noise_std = noise_std; }
-
-Eigen::Vector2f IMU2D::acc_bias() const { return _acc_bias; }
-
-float IMU2D::gyr_bias() const { return _gyr_bias; }
-
-Eigen::Vector2f IMU2D::acc_noise_std() const { return _acc_noise_std; }
-
-float IMU2D::gyr_noise_std() const { return _gyr_noise_std; }
 
 IMUMeasurement IMU2D::measure(const Eigen::Vector2f& gt_acc, float gt_gyr) {
     std::normal_distribution<float> acc_noise_x(0.0f, _acc_noise_std.x());
@@ -30,3 +24,5 @@ IMUMeasurement IMU2D::measure(const Eigen::Vector2f& gt_acc, float gt_gyr) {
 
     return meas;
 }
+
+} // namespace sensors

@@ -6,13 +6,10 @@
 #include <Eigen/Dense>
 #include <optional>
 #include <random>
+#include <sensors/sensor_data.hpp>
 #include <vector>
 
-/// Observation of a landmark from a camera
-struct LandmarkObservation {
-    float u;            ///< Pixel coordinate on the 1D image plane (0 = left edge, width = right edge)
-    size_t landmark_id; ///< ID of the observed landmark
-};
+namespace sensors {
 
 /// 2D Camera model for projecting landmarks using pinhole model
 class Camera2D {
@@ -84,3 +81,5 @@ class Camera2D {
 
     std::mt19937 _rng{std::random_device{}()}; ///< Random number generator
 };
+
+} // namespace sensors

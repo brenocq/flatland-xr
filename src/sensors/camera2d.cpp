@@ -4,6 +4,8 @@
 #include "camera2d.hpp"
 #include <cmath>
 
+namespace sensors {
+
 void Camera2D::set_intrinsics(int width, float fov) {
     _width = width;
     _principal_point = static_cast<float>(width) / 2.0f;
@@ -77,7 +79,7 @@ std::vector<LandmarkObservation> Camera2D::project_landmarks(const Eigen::Vector
     for (size_t i = 0; i < landmarks.size(); i++) {
         auto u = project(pose, landmarks[i]);
         if (u.has_value()) {
-            observations.push_back({u.value(), i});
+            observations.push_back(LandmarkObservation(u.value(), i));
         }
     }
 
@@ -107,9 +109,11 @@ std::vector<LandmarkObservation> Camera2D::measure_landmarks(const Eigen::Vector
     for (size_t i = 0; i < landmarks.size(); i++) {
         auto u = measure(pose, landmarks[i]);
         if (u.has_value()) {
-            observations.push_back({u.value(), i});
+            observations.push_back(LandmarkObservation(u.value(), i));
         }
     }
 
     return observations;
 }
+
+} // namespace sensors

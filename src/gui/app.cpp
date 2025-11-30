@@ -410,8 +410,8 @@ void App::simulate() {
         _imu_measurements.push_back(_imu.measure(body_acc, gt_gyr));
 
         // Camera measurements (filter landmarks by wall occlusion)
-        std::vector<LandmarkObservation> gt_frame_obs;
-        std::vector<LandmarkObservation> noisy_frame_obs;
+        std::vector<sensors::LandmarkObservation> gt_frame_obs;
+        std::vector<sensors::LandmarkObservation> noisy_frame_obs;
         for (size_t j = 0; j < _landmarks.size(); j++) {
             if (!is_landmark_occluded_by_walls(pos, _landmarks[j])) {
                 auto gt_u = _camera.project(pose, _landmarks[j]);
@@ -630,7 +630,7 @@ void App::estimate() {
     const float dt = 1.0f;
 
     for (size_t i = 1; i < num_poses; i++) {
-        const IMUMeasurement& imu = _imu_measurements[i - 1];
+        const sensors::IMUMeasurement& imu = _imu_measurements[i - 1];
         Eigen::Vector3f prev_pose = _est_poses[i - 1];
         Eigen::Vector2f prev_vel = _est_vel[i - 1];
         float theta = prev_pose.z();
@@ -938,7 +938,7 @@ bool App::render_world_editor() {
                 Eigen::Vector3f pose = _gt_trajectory.pose_vector(last_t);
                 Eigen::Vector2f pos(pose.x(), pose.y());
                 // Filter landmarks by wall occlusion, keeping track of original indices
-                std::vector<LandmarkObservation> observations;
+                std::vector<sensors::LandmarkObservation> observations;
                 for (size_t i = 0; i < _landmarks.size(); i++) {
                     if (!is_landmark_occluded_by_walls(pos, _landmarks[i])) {
                         auto u = _camera.project(pose, _landmarks[i]);
@@ -967,7 +967,7 @@ bool App::render_world_editor() {
                             if (u.has_value()) {
                                 obs_count++;
                                 // Only show observation for the hovered landmark
-                                std::vector<LandmarkObservation> single_obs = {{u.value(), static_cast<size_t>(closest_landmark)}};
+                                std::vector<sensors::LandmarkObservation> single_obs = {{u.value(), static_cast<size_t>(closest_landmark)}};
                                 plot_2d_camera_frustum("##LandmarkHoverCamera", pos, pose.z(), _camera.fov(), 1.0f, Color::Blue());
                                 plot_2d_camera_rays("##LandmarkHoverRays", pos, _landmarks, single_obs, 1.0f);
                                 plot_2d_camera_observations("##LandmarkHoverObs", pos, pose.z(), _camera, single_obs);
@@ -980,7 +980,7 @@ bool App::render_world_editor() {
                     Eigen::Vector3f pose = _gt_trajectory.pose_vector(static_cast<float>(closest_gt));
                     // Draw camera frustum with projected landmarks (filtered by walls)
                     Eigen::Vector2f pos(pose.x(), pose.y());
-                    std::vector<LandmarkObservation> observations;
+                    std::vector<sensors::LandmarkObservation> observations;
                     for (size_t i = 0; i < _landmarks.size(); i++) {
                         if (!is_landmark_occluded_by_walls(pos, _landmarks[i])) {
                             auto u = _camera.project(pose, _landmarks[i]);

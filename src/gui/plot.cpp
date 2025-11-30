@@ -2,10 +2,10 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include "implot.h"
-#include <camera2d.hpp>
 #include <cmath>
 #include <core/trajectory2d.hpp>
 #include <gui/plot.hpp>
+#include <sensors/camera2d.hpp>
 
 void plot_2d_path(const std::string& label, const std::vector<Eigen::Vector2f>& positions, const Color& color, float weight) {
     plot_2d_line(label, positions, color, weight);
@@ -113,8 +113,8 @@ void plot_2d_trajectory(const std::string& label, const core::Trajectory2D& traj
     plot_2d_scatter(label, pose_positions, color, scatter_size);
 }
 
-void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f& position, float orientation, const Camera2D& camera,
-                                 const std::vector<LandmarkObservation>& observations) {
+void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f& position, float orientation, const sensors::Camera2D& camera,
+                                 const std::vector<sensors::LandmarkObservation>& observations) {
     if (observations.empty())
         return;
 
@@ -145,7 +145,7 @@ void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f
 }
 
 void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& position, const std::vector<Eigen::Vector2f>& landmarks,
-                         const std::vector<LandmarkObservation>& observations, float weight) {
+                         const std::vector<sensors::LandmarkObservation>& observations, float weight) {
     if (observations.empty())
         return;
 
