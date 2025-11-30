@@ -103,7 +103,7 @@ void App::update() {
     }
 
     if (ImGui::Begin("Sensor Measurements")) {
-        _measurements_panel.render(_sim_result, _camera);
+        _measurements_panel.render(_sim_result, _camera, _imu);
     }
     ImGui::End();
 

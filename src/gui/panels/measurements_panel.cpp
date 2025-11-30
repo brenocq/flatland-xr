@@ -12,7 +12,7 @@
 
 namespace gui {
 
-void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, const sensors::Camera2D& camera) {
+void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, const sensors::Camera2D& camera, const sensors::IMU2D& imu) {
     if (!sim_result.is_valid()) {
         widgets::Text("No measurements available. Draw a trajectory first.");
         return;
@@ -22,7 +22,7 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
 
     // Prepare time index axis
     std::vector<float> time_axis(num_steps);
-    for (size_t i = 0; i < num_steps; i++) {
+    for (size_t i = 0; i < num_steps; ++i) {
         time_axis[i] = static_cast<float>(i);
     }
 
@@ -32,13 +32,17 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
 
         // Extract accelerometer data as Vector2f
         std::vector<Eigen::Vector2f> gt_acc(num_steps), meas_acc(num_steps);
-        for (size_t i = 0; i < num_steps; i++) {
+        for (size_t i = 0; i < num_steps; ++i) {
             gt_acc[i] = sim_result.gt_imu[i].acc;
             meas_acc[i] = sim_result.imu_measurements[i].acc;
         }
 
+        // Plot measurement covariance (constant std for all time steps)
+        std::vector<Eigen::Vector2f> acc_std(num_steps, imu.acc_noise_std());
+        plot_covariance("Acc", time_axis, meas_acc, acc_std);
+
         // Plot ground truth and measurements
-        plot_vector("GT Acc", time_axis, gt_acc, Color::FadedPalette(), 1.0f);
+        plot_vector("Acc GT", time_axis, gt_acc, Color::FadedPalette(), 1.0f);
         plot_vector("Acc", time_axis, meas_acc, Color::DefaultPalette(), 2.0f);
 
         _ui_state->handle_time_selector(num_steps);
@@ -49,24 +53,22 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
     if (ImPlot::BeginPlot("IMU Gyroscope", ImVec2(-1, 200))) {
         ImPlot::SetupAxes("Time Index", "Angular velocity (rad/s)");
 
-        // Extract data
-        std::vector<float> gt_gyr(num_steps), meas_gyr(num_steps);
-        for (size_t i = 0; i < num_steps; i++) {
-            gt_gyr[i] = sim_result.gt_imu[i].gyr;
-            meas_gyr[i] = sim_result.imu_measurements[i].gyr;
+        // Extract data as 1D vectors
+        std::vector<Eigen::Vector<float, 1>> gyr_gt(num_steps), gyr_meas(num_steps);
+        for (size_t i = 0; i < num_steps; ++i) {
+            gyr_gt[i](0) = sim_result.gt_imu[i].gyr;
+            gyr_meas[i](0) = sim_result.imu_measurements[i].gyr;
         }
 
-        // Colors
-        Color color_gyr = Color::CatGreen();
-        Color gt_color_gyr = Color(0.25f * color_gyr.r() + 0.75f, 0.25f * color_gyr.g() + 0.75f, 0.25f * color_gyr.b() + 0.75f);
+        // Plot measurement covariance (constant std for all time steps)
+        std::vector<Eigen::Vector<float, 1>> gyr_std(num_steps);
+        for (size_t i = 0; i < num_steps; ++i)
+            gyr_std[i](0) = imu.gyr_noise_std();
+        plot_covariance("Gyr", time_axis, gyr_meas, gyr_std, Color::DefaultPalette());
 
-        // Plot ground truth (faded)
-        ImPlot::SetNextLineStyle(ImVec4(gt_color_gyr), 1.0f);
-        ImPlot::PlotLine("GT Gyro", time_axis.data(), gt_gyr.data(), static_cast<int>(num_steps));
-
-        // Plot measurements
-        ImPlot::SetNextLineStyle(ImVec4(color_gyr), 2.0f);
-        ImPlot::PlotLine("Gyro", time_axis.data(), meas_gyr.data(), static_cast<int>(num_steps));
+        // Plot ground truth and measurements
+        plot_vector("Gyr GT", time_axis, gyr_gt, Color::FadedPalette(), 1.0f);
+        plot_vector("Gyr", time_axis, gyr_meas, Color::DefaultPalette(), 2.0f);
 
         _ui_state->handle_time_selector(num_steps);
         ImPlot::EndPlot();
@@ -83,7 +85,7 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
         std::map<size_t, std::vector<std::pair<int, float>>> gt_tracks;
         std::map<size_t, std::vector<std::pair<int, float>>> meas_tracks;
 
-        for (size_t t = 0; t < num_steps; t++) {
+        for (size_t t = 0; t < num_steps; ++t) {
             int time_idx = static_cast<int>(t);
             for (const auto& obs : sim_result.gt_cam[t]) {
                 gt_tracks[obs.landmark_id].emplace_back(time_idx, obs.u);
@@ -102,7 +104,7 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
             std::vector<std::pair<int, float>> current_segment;
             current_segment.push_back(track[0]);
 
-            for (size_t i = 1; i < track.size(); i++) {
+            for (size_t i = 1; i < track.size(); ++i) {
                 if (track[i].first == track[i - 1].first + 1) {
                     // Consecutive, add to current segment
                     current_segment.push_back(track[i]);
@@ -136,7 +138,7 @@ void MeasurementsPanel::render(const simulation::SimulationResult& sim_result, c
             auto meas_segments = split_into_segments(track);
 
             // Draw ground truth segments (faded lines)
-            for (size_t seg_idx = 0; seg_idx < gt_segments.size(); seg_idx++) {
+            for (size_t seg_idx = 0; seg_idx < gt_segments.size(); ++seg_idx) {
                 const auto& seg = gt_segments[seg_idx];
                 if (seg.size() >= 2) {
                     std::vector<float> seg_t, seg_u;
