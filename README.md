@@ -52,7 +52,7 @@ Below is my vision for the full-stack perception pipeline:
  - **Frontend**: 1D Optical Flow tracking and RANSAC-based geometric verification to reject moving outliers.
  - **Backend**: A choice of state-of-the-art estimators (MSCKF+BA, Factor Graph) to fuse visual and inertial data.
  - **Visualization**: A real-time dashboard using ImGui/ImPlot/ImPlot3D to analyze states, residuals, covariances, etc.
- - **Food for thought**: 2D gaussian splatting? 2D ray tracing? depth estimation? Simulate 2D black hole (and visualize the space distortion with ImPlot3D)? Give each habitant an LLM so they can go on with their lives? Use rain measurements for state estimation?
+ - **Food for thought**: 2D gaussian splatting? 2D ray tracing? Depth estimation? Lens distortion? Simulate 2D black hole (and visualize the space distortion with ImPlot3D)? Give each habitant an LLM so they can go on with their lives? Use rain measurements for state estimation?
 
 ## 🏁 Getting Started
 
@@ -65,7 +65,7 @@ cmake -B build && cmake --build build
 
 > [!CAUTION]
 > **Spoilers Ahead!**
-> 
+>
 > The section below contains significant plot details. I **highly** recommend reading the book first so you can experience the dimensional shift and social satire firsthand.
 
 To create these XR glasses, first we need to understand the physics that govern Flatland. Below is my interpretation of *Flatland's* physics, along with a breakdown of the core concepts presented in each chapter.
@@ -74,7 +74,7 @@ To create these XR glasses, first we need to understand the physics that govern 
   <img src="https://github.com/user-attachments/assets/2a6eaf6b-e344-47ec-9574-aae2769a5927"/>
 </div>
 
-_The beautiful animation you just witnessed is an SVG generated from my actual handwriting, and it changes color depending if you use light/dark mode_
+_The beautiful animation you just witnessed is an SVG generated from my actual handwriting, and it changes color depending if you use light/dark mode._
 
 ## 📐 The Math of Flatland
 
