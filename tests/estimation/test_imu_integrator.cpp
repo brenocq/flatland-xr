@@ -12,17 +12,18 @@ using namespace sensors;
 class IMUIntegratorTest : public ::testing::Test {
   protected:
     void SetUp() override {
-        imu.set_acc_bias(Eigen::Vector2f::Zero());
-        imu.set_gyr_bias(0.0f);
-        imu.set_acc_noise_std(Eigen::Vector2f::Zero());
-        imu.set_gyr_noise_std(0.0f);
+        imu = std::make_shared<IMU2D>();
+        imu->set_acc_bias(Eigen::Vector2f::Zero());
+        imu->set_gyr_bias(0.0f);
+        imu->set_acc_noise_std(Eigen::Vector2f::Zero());
+        imu->set_gyr_noise_std(0.0f);
 
-        integrator.set_imu_model(&imu);
+        integrator.set_imu_model(imu);
         integrator.set_gravity(Eigen::Vector2f(0, -9.81f));
         integrator.set_process_noise(0.1f, 0.01f);
     }
 
-    IMU2D imu;
+    std::shared_ptr<IMU2D> imu;
     IMUIntegrator integrator;
 };
 

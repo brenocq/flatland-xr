@@ -23,13 +23,16 @@ class SimulationTest : public ::testing::Test {
         }
         trajectory.build(poses);
 
-        // Set up sensors
-        camera.set_intrinsics(100, core::HALF_PI);
-        camera.set_noise_std(0.0f);
-        imu.set_acc_bias(Eigen::Vector2f::Zero());
-        imu.set_gyr_bias(0.0f);
-        imu.set_acc_noise_std(Eigen::Vector2f::Zero());
-        imu.set_gyr_noise_std(0.0f);
+        // Set up sensors (using shared pointers)
+        camera = std::make_shared<sensors::Camera2D>();
+        camera->set_intrinsics(100, core::HALF_PI);
+        camera->set_noise_std(0.0f);
+
+        imu = std::make_shared<sensors::IMU2D>();
+        imu->set_acc_bias(Eigen::Vector2f::Zero());
+        imu->set_gyr_bias(0.0f);
+        imu->set_acc_noise_std(Eigen::Vector2f::Zero());
+        imu->set_gyr_noise_std(0.0f);
 
         // Create landmarks
         landmarks = {
@@ -40,8 +43,8 @@ class SimulationTest : public ::testing::Test {
     }
 
     Trajectory2D trajectory;
-    sensors::Camera2D camera;
-    sensors::IMU2D imu;
+    std::shared_ptr<sensors::Camera2D> camera;
+    std::shared_ptr<sensors::IMU2D> imu;
     std::vector<Eigen::Vector2f> landmarks;
     std::vector<Wall> walls;
 };
