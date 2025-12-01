@@ -29,11 +29,15 @@ Welcome to the Spatial Computing revolution... for A Square.
 
 ## 📖 Introduction
 
-Imagine if the engineers at a tech giant were tasked with building XR glasses for the inhabitants of Edwin Abbott's novella, Flatland. How do you SLAM your way out when the universe only has 3 degrees of freedom? How do you do Visual Odometry when your "image" is just a 1D strip of pixels?
+Have you ever asked yourself: **"How would a tech giant build XR glasses for the inhabitants of Edwin Abbott's Flatland?"**
 
-**Flatland XR** is a serious educational sandbox disguised as a geometry joke. It implements a production-grade Visual-Inertial Odometry (VIO) stack, but mathematically projected down to a 2D world.
+Me too.
 
-By stripping away the Z-axis (and the headaches of 3D rotation groups, quaternions, and gimbal locks), we can explore the core algorithms of modern **SLAM**, **MSCKF**, **Factor Graphs**, and **Bundle Adjustment** in their purest, most understandable form.
+It raises some fascinating questions. How do you SLAM your way through a universe that only has 3 degrees of freedom? How do you perform robust Visual Odometry when your "image" is nothing more than a 1D strip of pixels?
+
+**Flatland XR** is a serious interactive tutorial disguised as a geometry joke. It implements a production-grade **Visual-Inertial SLAM (VI-SLAM)** stack, but mathematically projected down to a 2D world.
+
+By stripping away the Z-axis - and the accompanying headaches of 3D rotation groups, quaternions, and gimbal locks - we can explore the core algorithms of modern **VI-SLAM** (**MSCKF**, **Bundle Adjustment**, and **Factor Graphs**) in their purest, most understandable form.
 
 ## 🚀 Project Overview
 
