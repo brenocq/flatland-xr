@@ -84,6 +84,10 @@ To create these XR glasses, first we need to understand the physics that govern 
 
 _The beautiful animation you just witnessed is an SVG generated from my actual handwriting, and it changes color depending if you use light/dark mode._
 
+<div align="center">
+ <a href="https://github.com/brenocq/flatland-xr#-my-handwritten-notes"><img src="https://github.com/user-attachments/assets/909d4316-2b95-48bb-9fbb-cda3785bab85" alt="Animate it again!"/></a>
+</div>
+
 ## 📐 The Math of Flatland
 
 ### 📍 State Representation
