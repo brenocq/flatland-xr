@@ -19,6 +19,7 @@ Welcome to the Spatial Computing revolution... for A Square.
 - [📖 Introduction](#-introduction)
 - [🚀 Project Overview](#-project-overview)
 - [🏁 Getting Started](#-getting-started)
+- [📚 My Handwritten Notes](#-my-handwritten-notes)
 - [📐 The Math of Flatland](#-the-math-of-flatland)
   - [📍 State Representation](#-state-representation)
   - [📡 Sensor Models](#-sensor-models)
@@ -41,11 +42,17 @@ By stripping away the Z-axis - and the accompanying headaches of 3D rotation gro
 
 ## 🚀 Project Overview
 
-This repository contains a full-stack perception pipeline:
- - **Simulation**: A configurable "World Generator" that creates 2D environments and simulates the glasses moving through them. It generates noisy sensor data (1D Line-Scan Cameras & 2D IMU).
+> [!IMPORTANT]
+> 🚧 **Under Construction**
+>
+> This project is in the early stages of development. You **will** encounter buggy algorithms, incomplete documentation, and missing features. All help is welcomed, their XR glasses won't be built by themselves... I think.
+
+Below is my vision for the full-stack perception pipeline:
+ - **Simulation**: A configurable "World Editor" that creates 2D environments and simulates the glasses moving through them. It generates noisy sensor data (1D Line-Scan Cameras & 2D IMU).
  - **Frontend**: 1D Optical Flow tracking and RANSAC-based geometric verification to reject moving outliers.
- - **Backend**: A choice of state-of-the-art estimators (MSCKF, Factor Graph) to fuse visual and inertial data.
- - **Visualization**: A real-time dashboard using ImGui and ImPlot to analyze residuals, covariance ellipses, and trajectory drift.
+ - **Backend**: A choice of state-of-the-art estimators (MSCKF+BA, Factor Graph) to fuse visual and inertial data.
+ - **Visualization**: A real-time dashboard using ImGui/ImPlot/ImPlot3D to analyze states, residuals, covariances, etc.
+ - **Food for thought**: 2D gaussian splatting? 2D ray tracing? depth estimation? Simulate 2D black hole (and visualize the space distortion with ImPlot3D)? Give each habitant an LLM so they can go on with their lives? Use rain measurements for state estimation?
 
 ## 🏁 Getting Started
 
@@ -53,6 +60,21 @@ This repository contains a full-stack perception pipeline:
 cmake -B build && cmake --build build
 ./build/flatland-xr
 ```
+
+## 📚 My Handwritten Notes
+
+> [!CAUTION]
+> **Spoilers Ahead!**
+> 
+> The section below contains significant plot details. I **highly** recommend reading the book first so you can experience the dimensional shift and social satire firsthand.
+
+To create these XR glasses, first we need to understand the physics that govern Flatland. Below is my interpretation of *Flatland's* physics, along with a breakdown of the core concepts presented in each chapter.
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/2a6eaf6b-e344-47ec-9574-aae2769a5927"/>
+</div>
+
+_The beautiful animation you just witnessed is an SVG generated from my actual handwriting, and it changes color depending if you use light/dark mode_
 
 ## 📐 The Math of Flatland
 
