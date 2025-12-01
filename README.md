@@ -61,6 +61,14 @@ cmake -B build && cmake --build build
 ./build/flatland-xr
 ```
 
+You should get something like this:
+
+<div align="center">
+<img width="1312" height="940" alt="Image" src="https://github.com/user-attachments/assets/9e8cd271-8224-468d-aa5a-eaeb4f9a36f9" />
+</div>
+
+Have fun playing around!
+
 ## 📚 My Handwritten Notes
 
 > [!CAUTION]
