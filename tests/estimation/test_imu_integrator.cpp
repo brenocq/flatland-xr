@@ -147,8 +147,8 @@ TEST_F(IMUIntegratorTest, ConstantAngularVelocity) {
 TEST_F(IMUIntegratorTest, BiasCompensation) {
     Eigen::Vector2f acc_bias(0.1f, 0.2f);
     float gyr_bias = 0.05f;
-    imu.set_acc_bias(acc_bias);
-    imu.set_gyr_bias(gyr_bias);
+    imu->set_acc_bias(acc_bias);
+    imu->set_gyr_bias(gyr_bias);
 
     integrator.set_gravity(Eigen::Vector2f::Zero());
     integrator.initialize(Eigen::Vector3f::Zero(), Eigen::Vector2f::Zero());
