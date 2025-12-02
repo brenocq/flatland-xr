@@ -49,7 +49,7 @@ Me too.
 
 It raises some fascinating questions. How do you SLAM your way through a universe that only has 3 degrees of freedom? How do you perform robust Visual Odometry when your "image" is nothing more than a 1D strip of pixels?
 
-**Flatland XR** is a serious interactive tutorial disguised as a geometry joke. It implements a production-grade **Visual-Inertial SLAM (VI-SLAM)** stack, but mathematically projected down to a 2D world.
+**Flatland XR** is a serious interactive tutorial disguised as a geometry joke. It implements a standard **Visual-Inertial SLAM (VI-SLAM)** stack, but mathematically projected down to a 2D world.
 
 By stripping away the Z-axis - and the accompanying headaches of 3D rotation groups, quaternions, and gimbal locks - we can explore the core algorithms of modern **VI-SLAM** (**MSCKF**, **Bundle Adjustment**, and **Factor Graphs**) in their purest, most understandable form.
 
