@@ -63,7 +63,7 @@ TEST_F(IMUIntegratorTest, InitializeSetsZeroCovariance) {
     // Initialize sets small initial covariance (0.01 * Identity), not zero
     float expected_pose_cov = std::sqrt(3.0f * 0.01f * 0.01f); // norm of 0.01 * Identity(3x3)
     float expected_vel_cov = std::sqrt(2.0f * 0.01f * 0.01f);  // norm of 0.01 * Identity(2x2)
-    
+
     EXPECT_NEAR(state.pose_cov.norm(), expected_pose_cov, 1e-6f);
     EXPECT_NEAR(state.vel_cov.norm(), expected_vel_cov, 1e-6f);
 }
