@@ -29,17 +29,20 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(eigen)
 
 # Setup GLFW (disable tests, examples, docs)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(
-    glfw
-    GIT_REPOSITORY "https://github.com/glfw/glfw"
-    GIT_TAG "3.3.8"
-    GIT_PROGRESS TRUE
-    GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(glfw)
+if(NOT EMSCRIPTEN)
+    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(
+        glfw
+        GIT_REPOSITORY "https://github.com/glfw/glfw"
+        GIT_TAG "3.3.8"
+        GIT_PROGRESS TRUE
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(glfw)
+endif()
+# Note: Emscripten uses its own GLFW port via -sUSE_GLFW=3
 
 # Setup ImGui
 FetchContent_Declare(
@@ -62,7 +65,16 @@ set(IMGUI_SOURCE
 add_library(imgui STATIC ${IMGUI_SOURCE})
 target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src;${imgui_SOURCE_DIR};${imgui_SOURCE_DIR}/backends/")
 target_compile_definitions(imgui PUBLIC IMGUI_USER_CONFIG="thirdparty/imconfig_flatland.h")
-target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
+
+# Link dependencies based on platform
+if(EMSCRIPTEN)
+    # Emscripten: Use built-in GLFW port
+    target_compile_options(imgui PUBLIC -sUSE_GLFW=3 -sUSE_WEBGL2=1)
+    target_link_options(imgui PUBLIC -sUSE_GLFW=3 -sUSE_WEBGL2=1)
+else()
+    # Native: Use FetchContent GLFW
+    target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
+endif()
 
 # Setup ImPlot
 FetchContent_Declare(
@@ -206,12 +218,42 @@ if(FLATLAND_XR_BUILD_TESTS)
 endif()
 
 # Copy resources to build directory for development
-add_custom_command(
-    TARGET flatland-xr
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/resources ${CMAKE_BINARY_DIR}/resources
-    COMMENT "Copying resources to build directory"
-)
+if(NOT EMSCRIPTEN)
+    add_custom_command(
+        TARGET flatland-xr
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/resources ${CMAKE_BINARY_DIR}/resources
+        COMMENT "Copying resources to build directory"
+    )
+endif()
 
 # Configure source directory path for resource loading
 target_compile_definitions(flatland-xr PRIVATE FLATLAND_XR_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+# Emscripten-specific settings
+if(EMSCRIPTEN)
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+
+    # Emscripten compiler and linker flags
+    target_compile_options(flatland-xr PRIVATE -sUSE_GLFW=3 -sUSE_WEBGL2=1)
+
+    target_link_options(
+        flatland-xr
+        PRIVATE
+        -sUSE_GLFW=3
+        -sUSE_WEBGL2=1
+        -sFULL_ES3=1
+        -sWASM=1
+        -sALLOW_MEMORY_GROWTH=1
+        -sNO_EXIT_RUNTIME=1
+        -sASSERTIONS=1
+        --preload-file
+        ${CMAKE_SOURCE_DIR}/resources@/resources
+        --shell-file
+        ${CMAKE_SOURCE_DIR}/.github/web/shell.html
+        -sTOTAL_MEMORY=512MB
+        -sSTACK_SIZE=5MB
+    )
+
+    message(STATUS "Building for Emscripten/WebAssembly")
+endif()

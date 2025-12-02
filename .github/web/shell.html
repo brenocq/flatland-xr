@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>😎 Flatland XR - Web Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #cdd6f4;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        h1 .gradient-text {
+            background: linear-gradient(135deg, #89b4fa 0%, #cba6f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            font-size: 1.1rem;
+            color: #bac2de;
+            margin-bottom: 20px;
+        }
+
+        .links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .links a {
+            color: #89b4fa;
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 1px solid #89b4fa;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .links a:hover {
+            background: #89b4fa;
+            color: #1e1e2e;
+        }
+
+        #canvas-container {
+            position: relative;
+            max-width: 100%;
+            background: #11111b;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+
+        canvas.emscripten {
+            display: block;
+            border: 0;
+            width: 100%;
+            height: auto;
+        }
+
+        #status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(137, 180, 250, 0.1);
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(137, 180, 250, 0.3);
+            border-top-color: #89b4fa;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #progress {
+            margin-top: 10px;
+            height: 6px;
+            background: rgba(137, 180, 250, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #89b4fa 0%, #cba6f7 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+            color: #a6adc8;
+            font-size: 0.9rem;
+        }
+
+        footer {
+            margin-top: auto;
+            padding-top: 30px;
+            text-align: center;
+            color: #6c7086;
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: #89b4fa;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>😎 <span class="gradient-text">Flatland XR?</span></h1>
+        <p class="tagline">Spatial Computing for A Square - Running in Your Browser!</p>
+        <div class="links">
+            <a href="https://github.com/brenocq/flatland-xr" target="_blank">📦 GitHub</a>
+            <a href="https://github.com/brenocq/flatland-xr#readme" target="_blank">📖 Documentation</a>
+            <a href="https://github.com/brenocq/flatland-xr/discussions" target="_blank">💬 Discussions</a>
+        </div>
+    </header>
+
+    <div id="canvas-container">
+        <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+    </div>
+
+    <div id="status">
+        <div class="spinner" id="spinner"></div>
+        <span id="status-text">Downloading...</span>
+        <div id="progress"><div id="progress-bar"></div></div>
+    </div>
+
+    <div class="controls">
+        <p>🖱️ Use your mouse to interact • ⌨️ Keyboard shortcuts available in the UI</p>
+    </div>
+
+    <footer>
+            <p>Built with ❤️ by <a href="https://github.com/brenocq" target="_blank">brenocq</a></p>
+        <p>© 2025 <a href="https://brenocq.com" target="_blank">Breno Cunha Queiroz</a> • <a href="https://github.com/brenocq/flatland-xr/blob/main/LICENSE" target="_blank">MIT License</a></p>
+    </footer>
+
+    <script>
+        var statusElement = document.getElementById('status');
+        var statusText = document.getElementById('status-text');
+        var progressBar = document.getElementById('progress-bar');
+        var spinner = document.getElementById('spinner');
+
+        var Module = {
+            preRun: [],
+            postRun: [],
+            print: (function() {
+                return function(text) {
+                    console.log('[stdout]', text);
+                };
+            })(),
+            printErr: function(text) {
+                console.error('[stderr]', text);
+            },
+            canvas: (function() {
+                var canvas = document.getElementById('canvas');
+
+                // Prevent default context menu
+                canvas.addEventListener("webglcontextlost", function(e) {
+                    alert('WebGL context lost. You will need to reload the page.');
+                    e.preventDefault();
+                }, false);
+
+                // Prevent browser from capturing wheel/scroll events
+                canvas.addEventListener('wheel', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, { passive: false });
+
+                // Prevent touch gestures from scrolling the page
+                canvas.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                }, { passive: false });
+
+                canvas.addEventListener('touchmove', function(e) {
+                    e.preventDefault();
+                }, { passive: false });
+
+                canvas.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                }, { passive: false });
+
+                return canvas;
+            })(),
+            setStatus: function(text) {
+                if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+                if (text === Module.setStatus.last.text) return;
+
+                statusText.innerHTML = text;
+
+                if (text === '') {
+                    statusElement.style.display = 'none';
+                    spinner.style.display = 'none';
+                } else {
+                    statusElement.style.display = 'block';
+                    spinner.style.display = 'inline-block';
+                }
+            },
+            totalDependencies: 0,
+            monitorRunDependencies: function(left) {
+                this.totalDependencies = Math.max(this.totalDependencies, left);
+                var percent = left ? ((this.totalDependencies - left) / this.totalDependencies * 100) : 100;
+                progressBar.style.width = percent + '%';
+
+                if (left) {
+                    Module.setStatus('Downloading data... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')');
+                } else {
+                    Module.setStatus('All downloads complete. Initializing...');
+                    setTimeout(function() {
+                        Module.setStatus('');
+                    }, 1000);
+                }
+            }
+        };
+
+        Module.setStatus('Downloading...');
+
+        window.onerror = function() {
+            Module.setStatus('Exception thrown, see JavaScript console');
+            spinner.style.display = 'none';
+            Module.setStatus = function(text) {
+                if (text) console.error('[post-exception status] ' + text);
+            };
+        };
+    </script>
+    {{{ SCRIPT }}}
+</body>
+</html>

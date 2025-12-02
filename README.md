@@ -15,6 +15,14 @@ Welcome to the Spatial Computing revolution... for A Square.
   <a href="https://github.com/brenocq/flatland-xr/actions/workflows/lint.yml"><img src="https://github.com/brenocq/flatland-xr/actions/workflows/lint.yml/badge.svg" alt="🧹 Lint"/></a>
 </div>
 
+<h6 align="center">
+    <a href="https://brenocq.com/flatland-xr"><b>Try it online</b></a>
+    ·
+    <a href="https://github.com/brenocq/flatland-xr/discussions">Discussions</a>
+    ·
+    <a href="https://github.com/sponsors/brenocq">Sponsor</a>
+</h6>
+
 ## 📋 Table of Contents
 
 - [📖 Introduction](#-introduction)
@@ -59,7 +67,12 @@ Below is my vision for the full-stack perception pipeline:
 
 ```
 ./build.sh --help
+
+# Desktop build
 ./build.sh --run
+
+# Web build
+./build.sh --web --run
 ```
 
 You should get something like this:

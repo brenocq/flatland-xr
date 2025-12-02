@@ -158,7 +158,13 @@ bool Window::create() {
     }
 
     // Setup OpenGL version
-#if defined(__APPLE__)
+#if defined(__EMSCRIPTEN__)
+    // WebGL 2.0 + GLSL ES 3.0 (Emscripten)
+    const char* glsl_version = "#version 300 es";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+#elif defined(__APPLE__)
     // GL 3.2 + GLSL 150 (MacOS)
     const char* glsl_version = "#version 150";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

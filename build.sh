@@ -34,15 +34,16 @@ JOBS=$(nproc)
 STRICT_WARNINGS=false
 ENABLE_TESTS=true
 VERBOSE=false
+WEB_BUILD=false
 
 # Print usage
 usage() {
-    printf "${BOLD}Flatland XR - Build and Run Script${NC}\n\n"
+    printf "${BOLD}😎 Flatland XR - Build and Run Script${NC}\n\n"
 
-    printf "${BOLD}${BLUE}USAGE:${NC}\n"
+    printf "${BOLD}USAGE:${NC}\n"
     printf "    build.sh [OPTIONS]\n\n"
 
-    printf "${BOLD}${BLUE}OPTIONS:${NC}\n"
+    printf "${BOLD}OPTIONS:${NC}\n"
     printf "    ${GREEN}-h, --help${NC}              Show this help message\n"
     printf "\n"
     printf "    ${YELLOW}Build Options:${NC}\n"
@@ -53,6 +54,7 @@ usage() {
     printf "    ${GREEN}-s, --strict${NC}            Enable strict warnings and treat as errors\n"
     printf "    ${GREEN}-v, --verbose${NC}           Verbose build output\n"
     printf "    ${GREEN}--no-tests${NC}              Don't build tests\n"
+    printf "    ${GREEN}--web${NC}                   Build for WebAssembly (requires Emscripten)\n"
     printf "\n"
     printf "    ${YELLOW}Run Options:${NC}\n"
     printf "    ${GREEN}-t, --test${NC}              Run tests after building\n"
@@ -61,7 +63,7 @@ usage() {
     printf "    ${YELLOW}Directory:${NC}\n"
     printf "    ${GREEN}-b, --build-dir <DIR>${NC}   Build directory (default: build)\n\n"
 
-    printf "${BOLD}${BLUE}EXAMPLES:${NC}\n"
+    printf "${BOLD}EXAMPLES:${NC}\n"
     printf "    ${GRAY}# Build in release mode${NC}\n"
     printf "    ./build.sh\n\n"
     printf "    ${GRAY}# Build in debug mode and run tests${NC}\n"
@@ -72,6 +74,8 @@ usage() {
     printf "    ./build.sh --run\n\n"
     printf "    ${GRAY}# Fast debug build with 8 jobs${NC}\n"
     printf "    ./build.sh -d -j 8\n\n"
+    printf "    ${GRAY}# Build for WebAssembly${NC}\n"
+    printf "    ./build.sh --web --run\n\n"
     exit 0
 }
 
@@ -117,6 +121,12 @@ while [[ $# -gt 0 ]]; do
             ENABLE_TESTS=false
             shift
             ;;
+        --web)
+            WEB_BUILD=true
+            BUILD_DIR="build-web"
+            ENABLE_TESTS=false
+            shift
+            ;;
         -v|--verbose)
             VERBOSE=true
             shift
@@ -130,10 +140,38 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Print header
-echo -e "${BOLD}════════════════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}  😎 Flatland XR - Build Script${NC}"
-echo -e "${BOLD}════════════════════════════════════════════════════════════════${NC}"
-echo ""
+if [ "$WEB_BUILD" = true ]; then
+    echo -e "${BOLD}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${BOLD}  😎🌐 Flatland XR - WebAssembly Build${NC}"
+    echo -e "${BOLD}════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+
+    # Check if Emscripten is available
+    if ! command -v emcc &> /dev/null; then
+        echo -e "${RED}❌ Emscripten not found!${NC}"
+        echo ""
+        echo "Install Emscripten:"
+        echo -e "  ${YELLOW}# Arch Linux${NC}"
+        echo -e "  yay -S emscripten"
+        echo ""
+        echo -e "  ${YELLOW}# Or manually${NC}"
+        echo -e "  git clone https://github.com/emscripten-core/emsdk.git"
+        echo -e "  cd emsdk"
+        echo -e "  ./emsdk install latest"
+        echo -e "  ./emsdk activate latest"
+        echo -e "  source ./emsdk_env.sh"
+        echo ""
+        exit 1
+    fi
+
+    echo -e "${GREEN}✅ Emscripten found:${NC} $(emcc --version | head -1)"
+    echo ""
+else
+    echo -e "${BOLD}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${BOLD}  😎 Flatland XR - Build Script${NC}"
+    echo -e "${BOLD}════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+fi
 
 # Print configuration
 echo -e "${BLUE}Configuration:${NC}"
@@ -154,25 +192,34 @@ if [ "$CLEAN" = true ]; then
 fi
 
 # Configure CMake
-echo -e "${YELLOW}⚙️ Configuring CMake...${NC}"
+echo -e "${YELLOW}⚙️  Configuring CMake...${NC}"
 
-CMAKE_ARGS=(
-    -B "$BUILD_DIR"
-    -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-)
+if [ "$WEB_BUILD" = true ]; then
+    # Web build with Emscripten
+    if ! emcmake cmake -B "$BUILD_DIR" -DFLATLAND_XR_BUILD_TESTS=OFF; then
+        echo -e "${RED}❌ CMake configuration failed${NC}"
+        exit 1
+    fi
+else
+    # Native build
+    CMAKE_ARGS=(
+        -B "$BUILD_DIR"
+        -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    )
 
-if [ "$STRICT_WARNINGS" = true ]; then
-    CMAKE_ARGS+=(-DFLATLAND_XR_STRICT_WARNINGS=ON)
-fi
+    if [ "$STRICT_WARNINGS" = true ]; then
+        CMAKE_ARGS+=(-DFLATLAND_XR_STRICT_WARNINGS=ON)
+    fi
 
-if [ "$ENABLE_TESTS" = false ]; then
-    CMAKE_ARGS+=(-DFLATLAND_XR_BUILD_TESTS=OFF)
-fi
+    if [ "$ENABLE_TESTS" = false ]; then
+        CMAKE_ARGS+=(-DFLATLAND_XR_BUILD_TESTS=OFF)
+    fi
 
-if ! cmake "${CMAKE_ARGS[@]}"; then
-    echo -e "${RED}❌ CMake configuration failed${NC}"
-    exit 1
+    if ! cmake "${CMAKE_ARGS[@]}"; then
+        echo -e "${RED}❌ CMake configuration failed${NC}"
+        exit 1
+    fi
 fi
 
 echo -e "${GREEN}✅ CMake configuration complete${NC}"
@@ -181,25 +228,34 @@ echo ""
 # Build
 echo -e "${YELLOW}🔨 Building...${NC}"
 
-BUILD_ARGS=(
-    --build "$BUILD_DIR"
-    --parallel "$JOBS"
-)
+if [ "$WEB_BUILD" = true ]; then
+    # Web build
+    if ! emmake cmake --build "$BUILD_DIR" --parallel; then
+        echo -e "${RED}❌ Build failed${NC}"
+        exit 1
+    fi
+else
+    # Native build
+    BUILD_ARGS=(
+        --build "$BUILD_DIR"
+        --parallel "$JOBS"
+    )
 
-if [ "$VERBOSE" = true ]; then
-    BUILD_ARGS+=(--verbose)
-fi
+    if [ "$VERBOSE" = true ]; then
+        BUILD_ARGS+=(--verbose)
+    fi
 
-if ! cmake "${BUILD_ARGS[@]}"; then
-    echo -e "${RED}❌ Build failed${NC}"
-    exit 1
+    if ! cmake "${BUILD_ARGS[@]}"; then
+        echo -e "${RED}❌ Build failed${NC}"
+        exit 1
+    fi
 fi
 
 echo -e "${GREEN}✅ Build complete${NC}"
 echo ""
 
-# Copy compile_commands.json to root for IDE support
-if [ -f "$BUILD_DIR/compile_commands.json" ]; then
+# Copy compile_commands.json to root for IDE support (native only)
+if [ "$WEB_BUILD" = false ] && [ -f "$BUILD_DIR/compile_commands.json" ]; then
     # Check if it's already a symlink pointing to the right place
     if [ ! -L "compile_commands.json" ] || [ "$(readlink -f compile_commands.json)" != "$(readlink -f "$BUILD_DIR/compile_commands.json")" ]; then
         # Remove existing file/symlink if it exists
@@ -213,9 +269,19 @@ if [ -f "$BUILD_DIR/compile_commands.json" ]; then
     echo ""
 fi
 
-# Run tests if requested
+# Show web build output files
+if [ "$WEB_BUILD" = true ]; then
+    echo -e "${BLUE}📦 Generated files:${NC}"
+    ls -lh "$BUILD_DIR"/flatland-xr.* 2>/dev/null | awk '{printf "   %s  %s\n", $5, $9}' || echo "   (files not found)"
+    echo ""
+fi
+
+# Run tests if requested (native only)
 if [ "$RUN_TESTS" = true ]; then
-    if [ "$ENABLE_TESTS" = false ]; then
+    if [ "$WEB_BUILD" = true ]; then
+        echo -e "${YELLOW}⚠️  Tests not available for web builds${NC}"
+        echo ""
+    elif [ "$ENABLE_TESTS" = false ]; then
         echo -e "${YELLOW}⚠️  Tests not built (--no-tests was used)${NC}"
     else
         echo -e "${YELLOW}🧪 Running tests...${NC}"
@@ -232,32 +298,50 @@ fi
 
 # Run application if requested
 if [ "$RUN_APP" = true ]; then
-    echo -e "${YELLOW}🎮 Running Flatland XR...${NC}"
-    echo ""
+    if [ "$WEB_BUILD" = true ]; then
+        echo -e "${GREEN}🌐 Starting local server...${NC}"
+        echo -e "   Open: ${YELLOW}http://localhost:8000/flatland-xr.html${NC}"
+        echo -e "   Press Ctrl+C to stop"
+        echo ""
+        cd "$BUILD_DIR"
+        python3 -m http.server 8000
+    else
+        echo -e "${YELLOW}🎮 Running Flatland XR...${NC}"
+        echo ""
 
-    APP_PATH="$BUILD_DIR/flatland-xr"
-    if [ ! -f "$APP_PATH" ]; then
-        echo -e "${RED}❌ Application not found at: $APP_PATH${NC}"
-        exit 1
+        APP_PATH="$BUILD_DIR/flatland-xr"
+        if [ ! -f "$APP_PATH" ]; then
+            echo -e "${RED}❌ Application not found at: $APP_PATH${NC}"
+            exit 1
+        fi
+
+        # Run from build directory so resources are found
+        cd "$BUILD_DIR"
+        ./flatland-xr "$@"
+        cd - > /dev/null
     fi
-
-    # Run from build directory so resources are found
-    cd "$BUILD_DIR"
-    ./flatland-xr "$@"
-    cd - > /dev/null
 fi
 
 # Summary
 echo -e "${BOLD}════════════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}✨ Done!${NC}"
 echo ""
-echo -e "${BLUE}Next steps:${NC}"
-if [ "$RUN_TESTS" = false ] && [ "$ENABLE_TESTS" = true ]; then
-    echo -e "  • Run tests:     ${YELLOW}$0 --test${NC}"
+if [ "$WEB_BUILD" = true ]; then
+    echo -e "${BLUE}💡 Next steps:${NC}"
+    if [ "$RUN_APP" = false ]; then
+        echo -e "   • Test locally:  ${YELLOW}$0 --web --run${NC}"
+        echo -e "   • Or serve:      ${YELLOW}cd $BUILD_DIR && python3 -m http.server${NC}"
+    fi
+    echo -e "   • Deploy:        ${YELLOW}git push${NC} (GitHub Actions will deploy)"
+else
+    echo -e "${BLUE}Next steps:${NC}"
+    if [ "$RUN_TESTS" = false ] && [ "$ENABLE_TESTS" = true ]; then
+        echo -e "  • Run tests:     ${YELLOW}$0 --test${NC}"
+    fi
+    if [ "$RUN_APP" = false ]; then
+        echo -e "  • Run app:       ${YELLOW}$0 --run${NC}"
+    fi
+    echo -e "  • Build dir:     ${YELLOW}$BUILD_DIR/${NC}"
+    echo -e "  • Executable:    ${YELLOW}$BUILD_DIR/flatland-xr${NC}"
 fi
-if [ "$RUN_APP" = false ]; then
-    echo -e "  • Run app:       ${YELLOW}$0 --run${NC}"
-fi
-echo -e "  • Build dir:     ${YELLOW}$BUILD_DIR/${NC}"
-echo -e "  • Executable:    ${YELLOW}$BUILD_DIR/flatland-xr${NC}"
 echo -e "${BOLD}════════════════════════════════════════════════════════════════${NC}"
