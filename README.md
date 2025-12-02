@@ -16,12 +16,16 @@ Welcome to the Spatial Computing revolution... for A Square.
 </div>
 
 <h6 align="center">
-    <a href="https://brenocq.com/flatland-xr"><b>Try it online</b></a>
+    <a href="https://github.com/brenocq/flatland-xr/issues">🚧 Roadmap</a>
     ·
-    <a href="https://github.com/brenocq/flatland-xr/discussions">Discussions</a>
+    <a href="https://github.com/brenocq/flatland-xr/discussions">💬 Discussions</a>
     ·
-    <a href="https://github.com/sponsors/brenocq">Sponsor</a>
+    <a href="https://github.com/sponsors/brenocq">❤️ Sponsor</a>
 </h6>
+
+<div align="center"> 
+ <a href="http://flatland-xr.brenocq.com"><img src="https://github.com/user-attachments/assets/5cdc4120-9ebc-4d9b-8089-b10458c96825"/></a>
+</div>
 
 ## 📋 Table of Contents
 
