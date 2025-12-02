@@ -43,7 +43,7 @@ Welcome to the Spatial Computing revolution... for A Square.
 
 ## 📖 Introduction
 
-Have you ever asked yourself: **"How would a tech giant build XR glasses for the inhabitants of Edwin Abbott's Flatland?"**
+Have you ever wondered: **"How would a tech giant build XR glasses for the inhabitants of Edwin Abbott's Flatland?"**
 
 Me too.
 
