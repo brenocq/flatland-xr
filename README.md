@@ -9,9 +9,10 @@ Welcome to the Spatial Computing revolution... for A Square.
 </p>
 
 <div align="center">
-  <img src="https://github.com/brenocq/flatland-xr/actions/workflows/linux.yml/badge.svg" alt="🐧 Linux"/>
-  <img src="https://github.com/brenocq/flatland-xr/actions/workflows/macos.yml/badge.svg" alt="🍎 MacOS"/>
-  <img src="https://github.com/brenocq/flatland-xr/actions/workflows/windows.yml/badge.svg" alt="🪟 Windows"/>
+  <a href="https://github.com/brenocq/flatland-xr/actions/workflows/linux"><img src="https://github.com/brenocq/flatland-xr/actions/workflows/linux.yml/badge.svg" alt="🐧 Linux"/></a>
+  <a href="https://github.com/brenocq/flatland-xr/actions/workflows/macos.yml"><img src="https://github.com/brenocq/flatland-xr/actions/workflows/macos.yml/badge.svg" alt="🍎 MacOS"/></a>
+  <a href="https://github.com/brenocq/flatland-xr/actions/workflows/windows.yml"><img src="https://github.com/brenocq/flatland-xr/actions/workflows/windows.yml/badge.svg" alt="🪟 Windows"/></a>
+  <a href="https://github.com/brenocq/flatland-xr/actions/workflows/lint.yml"><img src="https://github.com/brenocq/flatland-xr/actions/workflows/lint.yml/badge.svg" alt="🧹 Lint"/></a>
 </div>
 
 ## 📋 Table of Contents
