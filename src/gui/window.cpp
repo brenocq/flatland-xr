@@ -201,8 +201,8 @@ bool Window::create() {
 
     // Load Inter fonts (Regular and Bold)
     ImGuiIO& io = ImGui::GetIO();
-    std::string font_regular_path = core::get_resource_path("fonts/Inter-Regular.ttf");
-    std::string font_bold_path = core::get_resource_path("fonts/Inter-Bold.ttf");
+    std::string font_regular_path = core::get_resource_path("Inter-Regular.ttf");
+    std::string font_bold_path = core::get_resource_path("Inter-Bold.ttf");
     io.Fonts->AddFontFromFileTTF(font_regular_path.c_str(), 16.0f); // Default font (index 0)
     io.Fonts->AddFontFromFileTTF(font_bold_path.c_str(), 16.0f);    // Bold font (index 1)
 

@@ -217,13 +217,13 @@ if(FLATLAND_XR_BUILD_TESTS)
     gtest_discover_tests(flatland-tests)
 endif()
 
-# Copy resources to build directory for development
+# Copy assets to build directory for development
 if(NOT EMSCRIPTEN)
     add_custom_command(
         TARGET flatland-xr
         POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/resources ${CMAKE_BINARY_DIR}/resources
-        COMMENT "Copying resources to build directory"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
+        COMMENT "Copying assets to build directory"
     )
 endif()
 
@@ -248,7 +248,7 @@ if(EMSCRIPTEN)
         -sNO_EXIT_RUNTIME=1
         -sASSERTIONS=1
         --preload-file
-        ${CMAKE_SOURCE_DIR}/resources@/resources
+        ${CMAKE_SOURCE_DIR}/assets@/assets
         --shell-file
         ${CMAKE_SOURCE_DIR}/.github/web/shell.html
         -sTOTAL_MEMORY=512MB
