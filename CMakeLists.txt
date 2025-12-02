@@ -99,6 +99,11 @@ if(MSVC)
     add_compile_definitions(_USE_MATH_DEFINES)
     # Disable warnings from external headers (Eigen)
     add_compile_options(/external:anglebrackets /external:W0)
+else()
+    # GCC/Clang: Treat Eigen as system headers to suppress warnings This is important when FLATLAND_XR_STRICT_WARNINGS is enabled
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        include_directories(SYSTEM ${CMAKE_BINARY_DIR}/_deps/eigen-src)
+    endif()
 endif()
 
 # Core library

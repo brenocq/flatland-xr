@@ -58,8 +58,8 @@ Below is my vision for the full-stack perception pipeline:
 ## 🏁 Getting Started
 
 ```
-cmake -B build && cmake --build build
-./build/flatland-xr
+./build.sh --help
+./build.sh --run
 ```
 
 You should get something like this:
