@@ -4,6 +4,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <core/types.hpp>
 #include <vector>
 
 namespace sensors {
@@ -22,15 +23,27 @@ struct IMUMeasurement {
 struct CameraMeasurement {
     float u = 0.0f;         ///< Pixel coordinate on the 1D image plane (0 = left edge, width = right edge)
     size_t landmark_id = 0; ///< ID of the observed landmark
-
+    
     CameraMeasurement() = default;
     CameraMeasurement(float u_, size_t id) : u(u_), landmark_id(id) {}
+};
+
+struct Image1D {
+    std::vector<core::RayHit> rays; ///< Ray hit information per pixel
+
+    Image1D() = default;
+    explicit Image1D(size_t width) : rays(width) {}
+    explicit Image1D(const std::vector<core::RayHit>& r) : rays(r) {}
+
+    bool empty() const { return rays.empty(); }
+    size_t size() const { return rays.size(); }
 };
 
 /// Camera frame containing all measurements at a single time step
 struct CameraFrame {
     std::vector<CameraMeasurement> observations;
-
+    Image1D image;
+    
     CameraFrame() = default;
     CameraFrame(const std::vector<CameraMeasurement>& obs) : observations(obs) {}
 

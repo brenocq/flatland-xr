@@ -3,6 +3,8 @@
 
 #include "imconfig.h"
 #include "implot.h"
+#include <algorithm>
+#include <array>
 #include <cmath>
 #include <core/math.hpp>
 #include <core/trajectory2d.hpp>
@@ -164,6 +166,26 @@ void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& positi
         std::vector<Eigen::Vector2f> ray = {position, landmark};
         ImPlot::SetNextLineStyle(color, weight);
         ImPlot::PlotLine(label.c_str(), &ray[0].x(), &ray[0].y(), static_cast<int>(ray.size()), ImPlotLineFlags_None, 0, sizeof(Eigen::Vector2f));
+    }
+}
+
+void plot_2d_ray_march(const std::string& label, const Eigen::Vector2f& cam_pos, const std::vector<core::RayHit>& rays, float weight) {
+    if (rays.empty())
+        return;
+
+    const size_t count = rays.size();
+    for (size_t i = 0; i < count; ++i) {
+        const Eigen::Vector2f& hit = rays[i].hit_pos;
+        if (!std::isfinite(hit.x()) || !std::isfinite(hit.y()))
+            continue;
+        if ((hit - cam_pos).squaredNorm() < 1e-8f)
+            continue;
+
+        std::array<Eigen::Vector2f, 2> segment = {cam_pos, hit};
+        const Eigen::Vector3f& color = rays[i].color;
+        ImPlot::SetNextLineStyle(ImVec4(color.x(), color.y(), color.z(), 1.0f), weight);
+        ImPlot::PlotLine((label + std::to_string(i)).c_str(), &segment[0].x(), &segment[0].y(), 2, ImPlotLineFlags_None, 0,
+                         sizeof(Eigen::Vector2f));
     }
 }
 

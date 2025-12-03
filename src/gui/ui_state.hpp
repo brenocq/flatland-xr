@@ -16,6 +16,11 @@ struct UIState {
 
     /// Currently selected time index for inspection (-1 if none)
     int selected_time_index = -1;
+    
+    /// Configuration for the visualization
+    bool show_camera_fov = true;    ///< Whether to show camera field of view in
+    bool show_ray_marching = false; ///< Whether to show ray marching lines
+    bool show_landmark_rays = true; ///< Whether to show rays to landmarks from camera
 
     bool has_selected_time() const { return selected_time_index >= 0; }
     void reset_selection() { selected_time_index = -1; }

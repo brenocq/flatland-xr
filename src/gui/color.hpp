@@ -11,6 +11,8 @@ namespace gui {
 class Color : public Eigen::Vector4f {
   public:
     Color(float r, float g, float b, float a = 1.0f) : Eigen::Vector4f(r, g, b, a) {}
+    Color(Eigen::Vector3f rgb, float a = 1.0f) : Eigen::Vector4f(rgb.x(), rgb.y(), rgb.z(), a) {}
+
 
     operator ImVec4() const { return ImVec4(r(), g(), b(), a()); }
     explicit Color(const ImVec4& c) : Eigen::Vector4f(c.x, c.y, c.z, c.w) {}

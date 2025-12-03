@@ -430,9 +430,13 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
                 }
                 ImGui::SetTooltip("GT Pose %d\nPos: (%.2f, %.2f)\nOrientation: %.2f°\nObservations: %zu", closest_gt, pose.x(), pose.y(),
                                   pose.z() * core::RAD_TO_DEG, observations.size());
-                plot_2d_camera_frustum("##HoverCamera", pos, pose.z(), camera->fov(), 1.0f, Color::CatBlue());
-                plot_2d_camera_rays("##HoverRays", pos, landmarks, observations, 1.0f);
-                plot_2d_camera_observations("##HoverObs", pos, pose.z(), camera, observations);
+                if (_ui_state->show_camera_fov) plot_2d_camera_frustum("##HoverCamera", pos, pose.z(), camera->fov(), 1.0f, Color::CatBlue());
+                if (_ui_state->show_landmark_rays) plot_2d_camera_rays("##HoverRays", pos, landmarks, observations, 1.0f);
+                if (_ui_state->show_landmark_rays) plot_2d_camera_observations("##HoverObs", pos, pose.z(), camera, observations);
+                if (_ui_state->show_ray_marching && camera) {
+                    auto scanline = camera->raytrace(pose, walls); // TODO: Shoulds be refactored out to avoid duplicat raymarching
+                    plot_2d_ray_march("##HoverRayMarch", pos, scanline.rays, 1.5f);
+                }
             }
         }
 
@@ -475,9 +479,9 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
         // Render walls (plain white)
         int wall_to_delete = -1;
         for (size_t w = 0; w < walls.size(); w++) {
-            const auto& wall = walls[w];
+            auto& wall = walls[w];
             if (wall.points.size() >= 2) {
-                plot_2d_line("##Wall" + std::to_string(w), wall.points, Color::White(), 2.0f);
+                plot_2d_line("##Wall" + std::to_string(w), wall.points, Color(wall.color), 2.0f);
 
                 // Check if mouse is near any segment of this wall for context menu
                 for (size_t i = 0; i + 1 < wall.points.size(); i++) {
@@ -503,6 +507,14 @@ bool WorldEditorPanel::render(world::Preset& current_preset, std::vector<Eigen::
 
             if (ImGui::BeginPopup(("WallContext" + std::to_string(w)).c_str())) {
                 widgets::Text("Wall %zu (%zu segments)", w, !wall.points.empty() ? wall.points.size() - 1 : 0);
+                ImGui::Separator();
+                float col[3] = { wall.color.x(), wall.color.y(), wall.color.z() };
+                if (ImGui::ColorEdit3("Color", col)) {
+                    wall.color = Eigen::Vector3f(col[0], col[1], col[2]);
+                    current_preset = world::Preset::Custom;
+                    world_changed = true;
+                }
+                
                 ImGui::Separator();
                 if (ImGui::MenuItem("Delete")) {
                     wall_to_delete = static_cast<int>(w);

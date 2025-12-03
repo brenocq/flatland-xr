@@ -8,7 +8,7 @@
 #include <random>
 #include <sensors/sensor_data.hpp>
 #include <vector>
-
+#include <core/types.hpp>
 namespace sensors {
 
 /// 2D Camera model for projecting landmarks using pinhole model
@@ -55,6 +55,23 @@ class Camera2D {
     /// @return Pixel coordinate u if visible, std::nullopt if outside FOV or behind camera
     std::optional<float> project(const Eigen::Vector3f& pose, const Eigen::Vector2f& landmark) const;
 
+    /// Raytrace camera view to detect wall intersections
+    /// @param pose Camera pose (x, y, orientation)
+    /// @param walls Vector of walls in the environment
+    /// @return Pixel color intensities along the image width
+    sensors::Image1D raytrace(const Eigen::Vector3f& pose, const std::vector<core::Wall>& walls) const;
+
+    /// Ray march a single ray from origin in direction dir to find wall intersection
+    /// @param origin Ray origin in world coordinates
+    /// @param dir Normalized ray direction in world coordinates
+    /// @param walls Vector of walls in the environment
+    /// @return RayHit containing hit information
+    core::RayHit march_ray(const Eigen::Vector2f& origin, const Eigen::Vector2f& dir, const std::vector<core::Wall>& walls) const;
+
+    float distance_point_segment(const Eigen::Vector2f& p, const Eigen::Vector2f& a, const Eigen::Vector2f& b) const;
+    float signed_distance_to_walls(const Eigen::Vector2f& p, const std::vector<core::Wall>& walls) const;
+    core::RayHit find_wall_color_at_hit(const Eigen::Vector2f& p, const std::vector<core::Wall>& walls) const;
+    
     /// Project multiple landmarks to camera image plane (no noise)
     /// @param pose Camera pose (x, y, orientation)
     /// @param landmarks Vector of landmark positions

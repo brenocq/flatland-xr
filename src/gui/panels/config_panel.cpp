@@ -62,6 +62,10 @@ bool ConfigPanel::render(float& dt, simulation::SimulationConfig& sim_config, st
         updated = true;
     }
 
+    widgets::BoldText("Visualization");
+    ImGui::Checkbox("Show Camera FOV", &_ui_state->show_camera_fov);
+    ImGui::Checkbox("Show Ray Marching", &_ui_state->show_ray_marching);
+    ImGui::Checkbox("Show Landmark Rays", &_ui_state->show_landmark_rays);
     ImGui::PopItemWidth();
     return updated;
 }
