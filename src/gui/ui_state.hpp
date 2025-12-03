@@ -16,7 +16,7 @@ struct UIState {
 
     /// Currently selected time index for inspection (-1 if none)
     int selected_time_index = -1;
-    
+
     /// Configuration for the visualization
     bool show_camera_fov = true;    ///< Whether to show camera field of view in
     bool show_ray_marching = false; ///< Whether to show ray marching lines

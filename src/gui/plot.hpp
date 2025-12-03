@@ -4,8 +4,8 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <gui/color.hpp>
 #include <core/types.hpp>
+#include <gui/color.hpp>
 #include <memory>
 #include <string>
 #include <vector>

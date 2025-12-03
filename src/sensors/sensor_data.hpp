@@ -23,7 +23,7 @@ struct IMUMeasurement {
 struct CameraMeasurement {
     float u = 0.0f;         ///< Pixel coordinate on the 1D image plane (0 = left edge, width = right edge)
     size_t landmark_id = 0; ///< ID of the observed landmark
-    
+
     CameraMeasurement() = default;
     CameraMeasurement(float u_, size_t id) : u(u_), landmark_id(id) {}
 };
@@ -43,7 +43,7 @@ struct Image1D {
 struct CameraFrame {
     std::vector<CameraMeasurement> observations;
     Image1D image;
-    
+
     CameraFrame() = default;
     CameraFrame(const std::vector<CameraMeasurement>& obs) : observations(obs) {}
 
