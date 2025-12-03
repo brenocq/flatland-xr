@@ -179,8 +179,6 @@ Image1D Camera2D::raytrace(const Eigen::Vector3f& pose, const std::vector<core::
     return scanline;
 }
 
-
-
 std::vector<CameraMeasurement> Camera2D::project_landmarks(const Eigen::Vector3f& pose, const std::vector<Eigen::Vector2f>& landmarks) const {
     std::vector<CameraMeasurement> observations;
     observations.reserve(landmarks.size());

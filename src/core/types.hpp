@@ -95,7 +95,7 @@ struct RayHit {
 
 /// Wall represented as a polyline (sequence of connected line segments)
 struct Wall {
-    std::vector<Eigen::Vector2f> points; ///< Points defining the wall polyline
+    std::vector<Eigen::Vector2f> points;                       ///< Points defining the wall polyline
     Eigen::Vector3f color = Eigen::Vector3f(1.0f, 1.0f, 1.0f); ///< Color of the wall (RGB)
 
     Wall() = default;

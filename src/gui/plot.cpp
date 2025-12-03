@@ -184,8 +184,7 @@ void plot_2d_ray_march(const std::string& label, const Eigen::Vector2f& cam_pos,
         std::array<Eigen::Vector2f, 2> segment = {cam_pos, hit};
         const Eigen::Vector3f& color = rays[i].color;
         ImPlot::SetNextLineStyle(ImVec4(color.x(), color.y(), color.z(), 1.0f), weight);
-        ImPlot::PlotLine((label + std::to_string(i)).c_str(), &segment[0].x(), &segment[0].y(), 2, ImPlotLineFlags_None, 0,
-                         sizeof(Eigen::Vector2f));
+        ImPlot::PlotLine((label + std::to_string(i)).c_str(), &segment[0].x(), &segment[0].y(), 2, ImPlotLineFlags_None, 0, sizeof(Eigen::Vector2f));
     }
 }
 
