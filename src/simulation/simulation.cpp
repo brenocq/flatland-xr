@@ -60,8 +60,10 @@ SimulationResult run(const core::Trajectory2D& trajectory, const std::vector<Eig
     // Generate sensor measurements
     result.gt_imu.reserve(num_poses);
     result.gt_cam.reserve(num_poses);
+    result.gt_image.reserve(num_poses);
     result.imu_measurements.reserve(num_poses);
     result.cam_measurements.reserve(num_poses);
+    result.image_measurements.reserve(num_poses);
 
     for (size_t i = 0; i < num_poses; i++) {
         const Eigen::Vector3f& pose = result.gt_poses[i];
@@ -105,6 +107,13 @@ SimulationResult run(const core::Trajectory2D& trajectory, const std::vector<Eig
         }
         result.gt_cam.push_back(gt_frame_obs);
         result.cam_measurements.push_back(noisy_frame_obs);
+    
+        // Camera scanline (raytrace)
+        auto gt_scanline = camera->raytrace(pose, walls);
+        result.gt_image.push_back(gt_scanline);
+        // We assume that the camera sensor is perfect and noiseless. 
+        // TODO: Add noise to the camera readings.
+        result.image_measurements.push_back(gt_scanline);
     }
 
     return result;

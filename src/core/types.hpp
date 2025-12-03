@@ -87,9 +87,16 @@ struct Landmark {
     float y() const { return position.y(); }
 };
 
+struct RayHit {
+    Eigen::Vector3f color = Eigen::Vector3f::Zero();
+    Eigen::Vector2f hit_pos = Eigen::Vector2f::Zero();
+    bool hit = false;
+};
+
 /// Wall represented as a polyline (sequence of connected line segments)
 struct Wall {
-    std::vector<Eigen::Vector2f> points;
+    std::vector<Eigen::Vector2f> points; ///< Points defining the wall polyline
+    Eigen::Vector3f color = Eigen::Vector3f(1.0f, 1.0f, 1.0f); ///< Color of the wall (RGB)
 
     Wall() = default;
     Wall(const std::vector<Eigen::Vector2f>& pts) : points(pts) {}

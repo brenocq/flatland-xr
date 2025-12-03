@@ -24,10 +24,12 @@ struct SimulationResult {
     // Ground truth measurements (no noise)
     std::vector<sensors::IMUMeasurement> gt_imu;
     std::vector<std::vector<sensors::CameraMeasurement>> gt_cam;
+    std::vector<sensors::Image1D> gt_image;
 
     // Noisy measurements
     std::vector<sensors::IMUMeasurement> imu_measurements;
     std::vector<std::vector<sensors::CameraMeasurement>> cam_measurements;
+    std::vector<sensors::Image1D> image_measurements;
 
     /// Check if simulation result is valid (has data)
     bool is_valid() const { return !gt_poses.empty(); }

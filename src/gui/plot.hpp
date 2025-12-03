@@ -5,6 +5,7 @@
 
 #include <Eigen/Dense>
 #include <gui/color.hpp>
+#include <core/types.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -38,6 +39,9 @@ void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f
 /// Plot rays from camera center to observed landmarks (colored by landmark ID)
 void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& position, const std::vector<Eigen::Vector2f>& landmarks,
                          const std::vector<sensors::CameraMeasurement>& observations, float weight = -1.0f);
+
+/// Plot ray-marched hits from the camera center to impact points colored by wall color
+void plot_2d_ray_march(const std::string& label, const Eigen::Vector2f& cam_pos, const std::vector<core::RayHit>& rays, float weight = 1.0f);
 
 /// Draw a highlight circle at the specified pose position (call inside active ImPlot context)
 void plot_pose_highlight(const Eigen::Vector3f& pose);
