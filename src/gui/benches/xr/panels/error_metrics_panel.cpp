@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2025 Breno Cunha Queiroz
 
 #include "imgui.h"
-#include <gui/panels/error_metrics_panel.hpp>
+#include <gui/benches/xr/panels/error_metrics_panel.hpp>
 #include <gui/widgets/text.hpp>
 
 namespace gui {

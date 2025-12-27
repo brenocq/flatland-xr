@@ -3,7 +3,7 @@
 
 #include "imgui.h"
 #include <core/math.hpp>
-#include <gui/panels/config_panel.hpp>
+#include <gui/benches/xr/panels/config_panel.hpp>
 #include <gui/widgets/text.hpp>
 
 namespace gui {

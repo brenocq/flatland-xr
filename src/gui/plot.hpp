@@ -39,6 +39,13 @@ void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f
 void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& position, const std::vector<Eigen::Vector2f>& landmarks,
                          const std::vector<sensors::CameraMeasurement>& observations, float weight = -1.0f);
 
+/// Plot a function y = f(x) by sampling it at screen resolution
+/// @param label Label for the plot
+/// @param func Callable that takes a float (x) and returns a float (y)
+/// @param color Line color
+/// @param weight Line weight
+template <typename Func> void plot_2d_func(const std::string& label, Func func, const Color& color = Color::Auto(), float weight = -1.0f);
+
 /// Draw a highlight circle at the specified pose position (call inside active ImPlot context)
 void plot_pose_highlight(const Eigen::Vector3f& pose);
 

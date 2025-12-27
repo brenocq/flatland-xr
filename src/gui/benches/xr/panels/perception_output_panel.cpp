@@ -4,7 +4,7 @@
 #include "imgui.h"
 #include "implot.h"
 #include <gui/color.hpp>
-#include <gui/panels/perception_output_panel.hpp>
+#include <gui/benches/xr/panels/perception_output_panel.hpp>
 #include <gui/plot.hpp>
 #include <gui/ui_state.hpp>
 #include <gui/widgets/text.hpp>

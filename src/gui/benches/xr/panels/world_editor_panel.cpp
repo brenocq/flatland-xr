@@ -5,7 +5,7 @@
 #include "implot.h"
 #include <core/math.hpp>
 #include <gui/color.hpp>
-#include <gui/panels/world_editor_panel.hpp>
+#include <gui/benches/xr/panels/world_editor_panel.hpp>
 #include <gui/plot.hpp>
 #include <gui/ui_state.hpp>
 #include <gui/widgets/text.hpp>
