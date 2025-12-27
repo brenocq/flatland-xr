@@ -39,8 +39,25 @@ class GravityBench : public Bench {
     /// Compute gravitational potential at a point
     double potential_func(double x, double y);
 
+    /// Simulate one time step
+    void simulate_step(double dt);
+
+    /// Reset simulation to initial conditions
+    void reset_simulation();
+
+    bool _first_render = true;
     GravityPreset _current_preset = GravityPreset::TwinStars;
+
+    // Bodies state
     std::vector<GravityBody> _bodies;
+    std::vector<GravityBody> _initial_bodies; // Store initial conditions for reset
+
+    // Simulation parameters
+    bool _is_playing = false;
+    double _simulation_time = 0.0;
+    float _time_step = 0.0001f;           // Time step for integration
+    float _playback_speed = 1.0f;         // Speed multiplier
+    double _gravitational_constant = 1.0; // G constant
 };
 
 } // namespace gui

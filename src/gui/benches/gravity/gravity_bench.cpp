@@ -53,6 +53,45 @@ void GravityBench::load_preset(GravityPreset preset) {
             _bodies.emplace_back(1.0, Eigen::Vector2d(0.0, 0.0), Eigen::Vector2d(0.0, 0.0));
             break;
     }
+
+    // Store initial conditions
+    _initial_bodies = _bodies;
+    _simulation_time = 0.0;
+}
+
+void GravityBench::reset_simulation() {
+    _bodies = _initial_bodies;
+    _simulation_time = 0.0;
+    _is_playing = false;
+}
+
+void GravityBench::simulate_step(double dt) {
+    const double softening = 0.01; // Softening factor to avoid singularities
+
+    // Compute accelerations for all bodies
+    std::vector<Eigen::Vector2d> accelerations(_bodies.size(), Eigen::Vector2d(0.0, 0.0));
+
+    for (size_t i = 0; i < _bodies.size(); i++) {
+        for (size_t j = 0; j < _bodies.size(); j++) {
+            if (i == j)
+                continue;
+
+            Eigen::Vector2d r = _bodies[j].position - _bodies[i].position;
+            double dist_sq = r.squaredNorm() + softening * softening;
+            double dist = std::sqrt(dist_sq);
+            double force_magnitude = _gravitational_constant * _bodies[j].mass / dist_sq;
+
+            accelerations[i] += force_magnitude * (r / dist);
+        }
+    }
+
+    // Update velocities and positions (simple Euler integration)
+    for (size_t i = 0; i < _bodies.size(); i++) {
+        _bodies[i].velocity += accelerations[i] * dt;
+        _bodies[i].position += _bodies[i].velocity * dt;
+    }
+
+    _simulation_time += dt;
 }
 
 double GravityBench::potential_func(double x, double y) {
@@ -70,10 +109,10 @@ double GravityBench::potential_func(double x, double y) {
 }
 
 void GravityBench::render_config_panel() {
-    ImGui::TextColored(Color::CatSapphire(), "Configuration");
+    // Preset selection
+    ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Setup");
     ImGui::Separator();
 
-    // Preset selection
     const char* preset_names[] = {"Custom", "Twin Stars", "Solar System", "Three Body", "Orbiting Planets"};
     int current_preset_idx = static_cast<int>(_current_preset);
 
@@ -81,19 +120,48 @@ void GravityBench::render_config_panel() {
         load_preset(static_cast<GravityPreset>(current_preset_idx));
     }
 
+    // Simulation controls
+    ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Simulation");
     ImGui::Separator();
-    ImGui::Text("Bodies: %zu", _bodies.size());
+
+    // Play/Pause button
+    if (_is_playing) {
+        if (ImGui::Button("⏸ Pause", ImVec2(120, 0))) {
+            _is_playing = false;
+        }
+    } else {
+        if (ImGui::Button("▶ Play", ImVec2(120, 0))) {
+            _is_playing = true;
+        }
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("⟲ Reset", ImVec2(120, 0))) {
+        reset_simulation();
+    }
+
+    ImGui::Text("Time: %.2f", _simulation_time);
+    ImGui::SliderFloat("Speed", &_playback_speed, 0.1f, 5.0f, "%.1fx");
+    ImGui::SliderFloat("Time Step", &_time_step, 0.0001f, 0.1f, "%.4f");
+    ImGui::DragScalar("G Constant", ImGuiDataType_Double, &_gravitational_constant, 0.1f, nullptr, nullptr, "%.2f");
+
+    ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Bodies: %zu", _bodies.size());
+    ImGui::Separator();
 
     if (ImGui::Button("Add Body")) {
         _bodies.emplace_back();
+        _initial_bodies = _bodies;
         _current_preset = GravityPreset::Custom;
     }
 
     ImGui::SameLine();
     if (ImGui::Button("Remove Body") && !_bodies.empty()) {
         _bodies.pop_back();
+        _initial_bodies = _bodies;
         _current_preset = GravityPreset::Custom;
     }
+
+    ImGui::Separator();
 
     // Body properties
     for (size_t i = 0; i < _bodies.size(); i++) {
@@ -136,6 +204,17 @@ void GravityBench::render() {
         return;
     }
 
+    // Update simulation if playing
+    if (_is_playing) {
+        // Use ImGui delta time and apply playback speed
+        float frame_dt = ImGui::GetIO().DeltaTime * _playback_speed;
+        // Multiple sub-steps for stability
+        int num_substeps = std::max(1, static_cast<int>(frame_dt / _time_step));
+        for (int i = 0; i < num_substeps; i++) {
+            simulate_step(_time_step);
+        }
+    }
+
     // Left side: Main visualization
     {
         ImGui::BeginChild("left pane", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), ImGuiChildFlags_None);
@@ -168,25 +247,6 @@ void GravityBench::render() {
                     plot_2d_arrow(arrow_label, pos, vel, body_color, 1.0f, std::min(vel.norm() * 0.2f, 0.2f));
                 }
             }
-
-            // Plot potential field lines (simplified)
-            // const int num_lines = 10;
-            // for (int i = 0; i < num_lines; i++) {
-            //    double angle = 2.0 * M_PI * i / num_lines;
-            //    std::vector<double> line_x, line_y;
-
-            //    for (double r = 0.5; r < 5.0; r += 0.1) {
-            //        double x = r * std::cos(angle);
-            //        double y = r * std::sin(angle);
-            //        line_x.push_back(x);
-            //        line_y.push_back(y);
-            //    }
-
-            //    if (!line_x.empty()) {
-            //        ImPlot::SetNextLineStyle(Color::CatSurface1(), 0.5f);
-            //        ImPlot::PlotLine("##field", line_x.data(), line_y.data(), static_cast<int>(line_x.size()));
-            //    }
-            //}
 
             ImPlot::EndPlot();
         }
