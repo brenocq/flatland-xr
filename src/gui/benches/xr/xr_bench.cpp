@@ -6,6 +6,7 @@
 
 #include <core/math.hpp>
 #include <gui/benches/xr/xr_bench.hpp>
+#include <gui/color.hpp>
 
 namespace gui {
 
@@ -113,7 +114,7 @@ void XRBench::render() {
     // Right side: Config panel
     {
         ImGui::BeginChild("config pane", ImVec2(0, 0), ImGuiChildFlags_Borders);
-        ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Configuration");
+        ImGui::TextColored(Color::CatSapphire(), "Configuration");
         ImGui::Separator();
         should_simulate |= _config_panel.render(_dt, _sim_config, _camera, _imu);
         ImGui::EndChild();
