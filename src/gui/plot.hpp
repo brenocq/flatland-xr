@@ -39,6 +39,16 @@ void plot_2d_camera_observations(const std::string& label, const Eigen::Vector2f
 void plot_2d_camera_rays(const std::string& label, const Eigen::Vector2f& position, const std::vector<Eigen::Vector2f>& landmarks,
                          const std::vector<sensors::CameraMeasurement>& observations, float weight = -1.0f);
 
+/// Plot an arrow from position to position+vector
+/// @param label Label for the plot
+/// @param position Starting position of the arrow
+/// @param vector Direction and magnitude of the arrow
+/// @param color Arrow color
+/// @param weight Line weight for the arrow shaft
+/// @param head_size Size of the arrowhead (default auto-sized based on vector length)
+void plot_2d_arrow(const std::string& label, const Eigen::Vector2f& position, const Eigen::Vector2f& vector, const Color& color = Color::Auto(),
+                   float weight = -1.0f, float head_size = -1.0f);
+
 /// Plot a function y = f(x) by sampling it at screen resolution
 /// @param label Label for the plot
 /// @param func Callable that takes a float (x) and returns a float (y)
