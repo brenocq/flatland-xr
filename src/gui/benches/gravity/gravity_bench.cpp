@@ -57,12 +57,21 @@ void GravityBench::load_preset(GravityPreset preset) {
     // Store initial conditions
     _initial_bodies = _bodies;
     _simulation_time = 0.0;
+
+    // Initialize trajectory buffers
+    _trajectories.clear();
+    _trajectories.resize(_bodies.size());
 }
 
 void GravityBench::reset_simulation() {
     _bodies = _initial_bodies;
     _simulation_time = 0.0;
     _is_playing = false;
+
+    // Clear trajectories
+    for (auto& traj : _trajectories) {
+        traj.clear();
+    }
 }
 
 void GravityBench::simulate_step(double dt) {
@@ -89,6 +98,16 @@ void GravityBench::simulate_step(double dt) {
     for (size_t i = 0; i < _bodies.size(); i++) {
         _bodies[i].velocity += accelerations[i] * dt;
         _bodies[i].position += _bodies[i].velocity * dt;
+
+        // Add current position to trajectory
+        _trajectories[i].push_back(_bodies[i].position);
+
+        // Remove old points (keep only last N points based on trail duration)
+        // Estimate: trail_duration / time_step = number of points
+        size_t max_points = std::min(_max_trail_points, static_cast<size_t>(_trail_duration / _time_step));
+        if (_trajectories[i].size() > max_points) {
+            _trajectories[i].erase(_trajectories[i].begin());
+        }
     }
 
     _simulation_time += dt;
@@ -151,6 +170,7 @@ void GravityBench::render_config_panel() {
     if (ImGui::Button("Add Body")) {
         _bodies.emplace_back();
         _initial_bodies = _bodies;
+        _trajectories.resize(_bodies.size());
         _current_preset = GravityPreset::Custom;
     }
 
@@ -158,10 +178,9 @@ void GravityBench::render_config_panel() {
     if (ImGui::Button("Remove Body") && !_bodies.empty()) {
         _bodies.pop_back();
         _initial_bodies = _bodies;
+        _trajectories.resize(_bodies.size());
         _current_preset = GravityPreset::Custom;
     }
-
-    ImGui::Separator();
 
     // Body properties
     for (size_t i = 0; i < _bodies.size(); i++) {
@@ -224,6 +243,26 @@ void GravityBench::render() {
             ImPlot::SetupAxisLimits(ImAxis_X1, -5.0, 5.0);
             ImPlot::SetupAxisLimits(ImAxis_Y1, -5.0, 5.0);
 
+            // Plot trajectories first (so they appear behind bodies)
+            for (size_t i = 0; i < _bodies.size(); i++) {
+                if (_trajectories[i].size() > 1) {
+                    // Convert trajectory to float for plotting
+                    std::vector<Eigen::Vector2f> traj_float;
+                    traj_float.reserve(_trajectories[i].size());
+                    for (const auto& pt : _trajectories[i]) {
+                        traj_float.emplace_back(pt.x(), pt.y());
+                    }
+
+                    // Get color from palette with reduced alpha
+                    Color body_color = Color::GetPaletteColor(i);
+                    Color trail_color(body_color.r(), body_color.g(), body_color.b(), 0.5f);
+
+                    char traj_label[64];
+                    snprintf(traj_label, sizeof(traj_label), "Trail %zu", i);
+                    plot_2d_line(traj_label, traj_float, trail_color, 1.5f);
+                }
+            }
+
             // Plot bodies with colors from the palette
             for (size_t i = 0; i < _bodies.size(); i++) {
                 double x = _bodies[i].position.x();
@@ -244,7 +283,7 @@ void GravityBench::render() {
                 if (vel.norm() > 1e-6f) {
                     char arrow_label[64];
                     snprintf(arrow_label, sizeof(arrow_label), "Velocity %zu", i);
-                    plot_2d_arrow(arrow_label, pos, vel, body_color, 1.0f, std::min(vel.norm() * 0.2f, 0.2f));
+                    plot_2d_arrow(arrow_label, pos, vel, body_color, 2.0f);
                 }
             }
 

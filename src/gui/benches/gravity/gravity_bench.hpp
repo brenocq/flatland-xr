@@ -52,6 +52,11 @@ class GravityBench : public Bench {
     std::vector<GravityBody> _bodies;
     std::vector<GravityBody> _initial_bodies; // Store initial conditions for reset
 
+    // Trajectory trails (circular buffer for each body)
+    std::vector<std::vector<Eigen::Vector2d>> _trajectories;
+    double _trail_duration = 1.0;     // Keep last 5 seconds of trajectory
+    size_t _max_trail_points = 10000; // Maximum points per trajectory
+
     // Simulation parameters
     bool _is_playing = false;
     double _simulation_time = 0.0;
