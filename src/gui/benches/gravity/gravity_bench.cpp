@@ -158,6 +158,15 @@ void GravityBench::render() {
                 char label[32];
                 snprintf(label, sizeof(label), "Body %zu", i);
                 ImPlot::PlotScatter(label, &x, &y, 1);
+
+                // Plot velocity arrow
+                Eigen::Vector2f pos = _bodies[i].position.cast<float>();
+                Eigen::Vector2f vel = _bodies[i].velocity.cast<float>();
+                if (vel.norm() > 1e-6f) {
+                    char arrow_label[64];
+                    snprintf(arrow_label, sizeof(arrow_label), "Velocity %zu", i);
+                    plot_2d_arrow(arrow_label, pos, vel, body_color, 1.0f, std::min(vel.norm() * 0.2f, 0.2f));
+                }
             }
 
             // Plot potential field lines (simplified)
