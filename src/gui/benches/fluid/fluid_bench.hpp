@@ -37,10 +37,17 @@ class FluidBench : public Bench {
     /// Reset simulation to initial state
     void reset_simulation();
 
+    /// Simulate one time step
+    void simulate_step(double dt);
+
     bool _first_render = true;
 
     // Simulation state
     std::vector<FluidParticle> _particles;
+    std::vector<FluidParticle> _initial_particles; // For reset
+    bool _is_playing = false;
+    double _simulation_time = 0.0;
+    double _time_accumulator = 0.0; // Accumulate frame time for fixed timestep
 
     // Container bounds
     double _container_min_x = 1.0;
@@ -51,6 +58,10 @@ class FluidBench : public Bench {
     // Simulation parameters
     int _particle_count = 1000;
     double _particle_spacing = 0.1;
+    float _time_step = 0.005f;    // dt for integration
+    float _playback_speed = 1.0f; // Speed multiplier
+    double _gravity = -9.81;      // Gravity acceleration (downward)
+    double _damping = 0.95;       // Velocity damping on collision
 };
 
 } // namespace gui

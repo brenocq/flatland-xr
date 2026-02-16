@@ -46,27 +46,94 @@ void FluidBench::initialize_particles() {
 
             // Stop if we've reached the desired count
             if (_particles.size() >= static_cast<size_t>(_particle_count)) {
+                _initial_particles = _particles;
                 return;
             }
         }
     }
+
+    // Store initial state
+    _initial_particles = _particles;
 }
 
-void FluidBench::reset_simulation() { initialize_particles(); }
+void FluidBench::reset_simulation() {
+    _particles = _initial_particles;
+    _simulation_time = 0.0;
+    _time_accumulator = 0.0;
+    _is_playing = false;
+}
+
+void FluidBench::simulate_step(double dt) {
+    // Apply gravity and integrate
+    for (auto& p : _particles) {
+        // Apply gravity
+        p.velocity.y() += _gravity * dt;
+
+        // Update position
+        p.position += p.velocity * dt;
+
+        // Boundary collision with damping
+        if (p.position.x() < _container_min_x) {
+            p.position.x() = _container_min_x;
+            p.velocity.x() *= -_damping;
+        }
+        if (p.position.x() > _container_max_x) {
+            p.position.x() = _container_max_x;
+            p.velocity.x() *= -_damping;
+        }
+        if (p.position.y() < _container_min_y) {
+            p.position.y() = _container_min_y;
+            p.velocity.y() *= -_damping;
+        }
+        if (p.position.y() > _container_max_y) {
+            p.position.y() = _container_max_y;
+            p.velocity.y() *= -_damping;
+        }
+    }
+
+    _simulation_time += dt;
+}
 
 void FluidBench::render_config_panel() {
     ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Simulation");
     ImGui::Separator();
 
+    // Play/Pause button
+    if (_is_playing) {
+        if (ImGui::Button("⏸ Pause", ImVec2(120, 0))) {
+            _is_playing = false;
+        }
+    } else {
+        if (ImGui::Button("▶ Play", ImVec2(120, 0))) {
+            _is_playing = true;
+        }
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("⏭ Step", ImVec2(120, 0))) {
+        simulate_step(_time_step);
+    }
+
+    ImGui::SameLine();
     if (ImGui::Button("⟲ Reset", ImVec2(120, 0))) {
         reset_simulation();
     }
 
+    ImGui::Text("Time: %.3f s", _simulation_time);
     ImGui::Text("Particles: %zu", _particles.size());
+
+    ImGui::SliderFloat("Time Step (dt)", &_time_step, 0.0001f, 0.02f, "%.4f");
+    ImGui::SliderFloat("Playback Speed", &_playback_speed, 0.001f, 5.0f, "%.3fx");
 
     if (ImGui::SliderInt("Particle Count", &_particle_count, 100, 5000)) {
         initialize_particles();
     }
+
+    ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Physics");
+    ImGui::Separator();
+
+    ImGui::DragScalar("Gravity", ImGuiDataType_Double, &_gravity, 0.1f, nullptr, nullptr, "%.2f");
+    ImGui::DragScalar("Damping", ImGuiDataType_Double, &_damping, 0.01f, nullptr, nullptr, "%.2f");
 
     ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Container");
     ImGui::Separator();
@@ -88,9 +155,21 @@ void FluidBench::render() {
         return;
     }
 
+    // Update simulation if playing (fixed timestep with accumulator)
+    if (_is_playing) {
+        // Accumulate frame time scaled by playback speed
+        _time_accumulator += ImGui::GetIO().DeltaTime * _playback_speed;
+
+        // Take as many steps as needed to consume accumulated time
+        while (_time_accumulator >= _time_step) {
+            simulate_step(_time_step);
+            _time_accumulator -= _time_step;
+        }
+    }
+
     // Left side: Main visualization
     {
-        ImGui::BeginChild("left pane", ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, 0), ImGuiChildFlags_None);
+        ImGui::BeginChild("left pane", ImVec2(ImGui::GetContentRegionAvail().x * 0.6f, 0), ImGuiChildFlags_None);
 
         if (ImPlot::BeginPlot("Fluid Simulation", ImVec2(-1, -1), ImPlotFlags_Equal)) {
             ImPlot::SetupAxes("X", "Y");
