@@ -10,7 +10,7 @@
 
 namespace gui {
 
-FluidBench::FluidBench() : Bench("Fluid") { initialize_particles(); }
+FluidBench::FluidBench() : Bench("Fluid"), _spatial_grid(0.2) { initialize_particles(); }
 
 void FluidBench::initialize_particles() {
     _particles.clear();
@@ -63,13 +63,37 @@ void FluidBench::reset_simulation() {
     _is_playing = false;
 }
 
-void FluidBench::simulate_step(double dt) {
-    // Apply gravity and integrate
-    for (auto& p : _particles) {
-        // Apply gravity
-        p.velocity.y() += _gravity * dt;
+void FluidBench::build_spatial_grid() {
+    // Update grid cell size to match current smoothing radius
+    _spatial_grid.set_cell_size(_smoothing_radius);
 
-        // Update position
+    _spatial_grid.clear();
+    for (size_t i = 0; i < _particles.size(); i++) {
+        _spatial_grid.insert(i, _particles[i].position);
+    }
+}
+
+void FluidBench::simulate_step(double dt) {
+    // Build spatial grid for neighbor queries
+    build_spatial_grid();
+
+    // TODO: Compute SPH forces (density, pressure, viscosity)
+    // For now, just apply gravity
+
+    // Clear forces
+    for (auto& p : _particles) {
+        p.force = Eigen::Vector2d(0.0, 0.0);
+    }
+
+    // Apply gravity
+    for (auto& p : _particles) {
+        p.force.y() += _gravity * _particle_mass;
+    }
+
+    // Integrate forces to update velocities and positions
+    for (auto& p : _particles) {
+        // Semi-implicit Euler integration
+        p.velocity += (p.force / _particle_mass) * dt;
         p.position += p.velocity * dt;
 
         // Boundary collision with damping
@@ -134,6 +158,15 @@ void FluidBench::render_config_panel() {
 
     ImGui::DragScalar("Gravity", ImGuiDataType_Double, &_gravity, 0.1f, nullptr, nullptr, "%.2f");
     ImGui::DragScalar("Damping", ImGuiDataType_Double, &_damping, 0.01f, nullptr, nullptr, "%.2f");
+
+    ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "SPH Parameters");
+    ImGui::Separator();
+
+    ImGui::DragScalar("Smoothing Radius", ImGuiDataType_Double, &_smoothing_radius, 0.01f, nullptr, nullptr, "%.3f");
+    ImGui::DragScalar("Particle Mass", ImGuiDataType_Double, &_particle_mass, 0.1f, nullptr, nullptr, "%.2f");
+    ImGui::DragScalar("Rest Density", ImGuiDataType_Double, &_rest_density, 10.0f, nullptr, nullptr, "%.1f");
+    ImGui::DragScalar("Gas Constant", ImGuiDataType_Double, &_gas_constant, 10.0f, nullptr, nullptr, "%.1f");
+    ImGui::DragScalar("Viscosity", ImGuiDataType_Double, &_viscosity, 0.01f, nullptr, nullptr, "%.3f");
 
     ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Container");
     ImGui::Separator();
