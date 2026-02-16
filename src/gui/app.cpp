@@ -32,6 +32,7 @@ void App::update() {
     // Render benches (each creates its own window)
     _xr_bench.render();
     _gravity_bench.render();
+    _fluid_bench.render();
 
     // Demo windows
     if (_show_imgui_demo) {
@@ -55,6 +56,7 @@ void App::setup_docking_layout(ImGuiID dockspace_id) {
     // Dock bench windows to the main viewport
     ImGui::DockBuilderDockWindow("XR Bench", dockspace_id);
     ImGui::DockBuilderDockWindow("Gravity Bench", dockspace_id);
+    ImGui::DockBuilderDockWindow("Fluid Bench", dockspace_id);
 
     ImGui::DockBuilderFinish(dockspace_id);
 }

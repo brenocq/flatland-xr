@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <gui/benches/fluid/fluid_bench.hpp>
 #include <gui/benches/gravity/gravity_bench.hpp>
 #include <gui/benches/xr/xr_bench.hpp>
 
@@ -39,8 +40,9 @@ class App {
     bool _show_about = false;
 
     //----- Physics benches -----//
-    GravityBench _gravity_bench;
     XRBench _xr_bench;
+    GravityBench _gravity_bench;
+    FluidBench _fluid_bench;
 };
 
 } // namespace gui

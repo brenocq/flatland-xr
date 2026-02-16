@@ -157,6 +157,7 @@ add_library(
     ${SRC_DIR}/gui/ui_state.cpp
     ${SRC_DIR}/gui/window.cpp
     ${SRC_DIR}/gui/benches/bench.cpp
+    ${SRC_DIR}/gui/benches/fluid/fluid_bench.cpp
     ${SRC_DIR}/gui/benches/gravity/gravity_bench.cpp
     ${SRC_DIR}/gui/benches/xr/xr_bench.cpp
     ${SRC_DIR}/gui/widgets/text.cpp
