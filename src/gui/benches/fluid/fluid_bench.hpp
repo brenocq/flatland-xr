@@ -102,6 +102,28 @@ class FluidBench : public Bench {
     /// Build spatial hash grid for current particle positions
     void build_spatial_grid();
 
+    /// SPH Kernel Functions
+    /// Poly6 kernel for density computation: W(r, h)
+    double kernel_poly6(double r, double h) const;
+
+    /// Spiky kernel gradient for pressure forces: ∇W(r, h)
+    Eigen::Vector2d kernel_spiky_gradient(const Eigen::Vector2d& r_vec, double r, double h) const;
+
+    /// Viscosity kernel Laplacian for viscosity forces: ∇²W(r, h)
+    double kernel_viscosity_laplacian(double r, double h) const;
+
+    /// Compute density for all particles
+    void compute_density();
+
+    /// Compute pressure for all particles
+    void compute_pressure();
+
+    /// Compute pressure forces for all particles
+    void compute_pressure_forces();
+
+    /// Compute viscosity forces for all particles
+    void compute_viscosity_forces();
+
     bool _first_render = true;
 
     // Simulation state
@@ -120,15 +142,15 @@ class FluidBench : public Bench {
 
     // SPH parameters
     double _smoothing_radius = 0.2; // h - kernel support radius
-    double _particle_mass = 1.0;    // m - mass per particle
+    double _particle_mass = 0.02;   // m - mass per particle (reduced for stability)
     double _rest_density = 1000.0;  // ρ₀ - rest density
-    double _gas_constant = 2000.0;  // k - equation of state stiffness
-    double _viscosity = 0.1;        // μ - viscosity coefficient
+    double _gas_constant = 200.0;   // k - equation of state stiffness (reduced)
+    double _viscosity = 0.5;        // μ - viscosity coefficient (increased)
 
     // Simulation parameters
     int _particle_count = 1000;
     double _particle_spacing = 0.1;
-    float _time_step = 0.005f;    // dt for integration
+    float _time_step = 0.001f;    // dt for integration (reduced for stability)
     float _playback_speed = 1.0f; // Speed multiplier
     double _gravity = -9.81;      // Gravity acceleration (downward)
     double _damping = 0.95;       // Velocity damping on collision

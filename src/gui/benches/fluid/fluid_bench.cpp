@@ -15,39 +15,38 @@ FluidBench::FluidBench() : Bench("Fluid"), _spatial_grid(0.2) { initialize_parti
 void FluidBench::initialize_particles() {
     _particles.clear();
 
-    // Calculate grid dimensions based on particle count and spacing
-    double container_width = _container_max_x - _container_min_x;
-    double container_height = _container_max_y - _container_min_y;
+    // Calculate container center
+    double center_x = (_container_min_x + _container_max_x) / 2.0;
+    double center_y = (_container_min_y + _container_max_y) / 2.0;
 
-    // Fill bottom half of container with particles in a grid
-    double spawn_height = container_height * 0.5;
-    int particles_per_row = static_cast<int>(container_width / _particle_spacing);
-    int num_rows = static_cast<int>(spawn_height / _particle_spacing);
+    // Calculate radius for the circle based on particle count and spacing
+    // Area of circle = π*r², particles needed = area / spacing²
+    double particles_per_area = 1.0 / (_particle_spacing * _particle_spacing);
+    double circle_area = _particle_count / particles_per_area;
+    double circle_radius = std::sqrt(circle_area / M_PI);
 
-    // Adjust to match desired particle count
-    int total_grid_particles = particles_per_row * num_rows;
-    if (total_grid_particles == 0)
-        total_grid_particles = 1;
+    // Generate particles in a grid pattern within a circle
+    int particles_per_row = static_cast<int>(2.0 * circle_radius / _particle_spacing);
+    int num_rows = particles_per_row;
 
-    double scale = std::sqrt(static_cast<double>(_particle_count) / total_grid_particles);
-    particles_per_row = std::max(1, static_cast<int>(particles_per_row * scale));
-    num_rows = std::max(1, static_cast<int>(num_rows * scale));
-
-    // Recalculate spacing to fit particles nicely
-    double actual_spacing_x = container_width / (particles_per_row + 1);
-    double actual_spacing_y = spawn_height / (num_rows + 1);
-
-    // Spawn particles in grid
     for (int row = 0; row < num_rows; row++) {
         for (int col = 0; col < particles_per_row; col++) {
-            double x = _container_min_x + (col + 1) * actual_spacing_x;
-            double y = _container_min_y + (row + 1) * actual_spacing_y;
-            _particles.emplace_back(x, y);
+            double x = center_x - circle_radius + (col + 0.5) * _particle_spacing;
+            double y = center_y - circle_radius + (row + 0.5) * _particle_spacing;
 
-            // Stop if we've reached the desired count
-            if (_particles.size() >= static_cast<size_t>(_particle_count)) {
-                _initial_particles = _particles;
-                return;
+            // Check if point is inside the circle
+            double dx = x - center_x;
+            double dy = y - center_y;
+            double dist_from_center = std::sqrt(dx * dx + dy * dy);
+
+            if (dist_from_center <= circle_radius) {
+                _particles.emplace_back(x, y);
+
+                // Stop if we've reached the desired count
+                if (_particles.size() >= static_cast<size_t>(_particle_count)) {
+                    _initial_particles = _particles;
+                    return;
+                }
             }
         }
     }
@@ -73,12 +72,146 @@ void FluidBench::build_spatial_grid() {
     }
 }
 
+// SPH Kernel Functions
+double FluidBench::kernel_poly6(double r, double h) const {
+    if (r < 0.0 || r >= h) {
+        return 0.0;
+    }
+
+    // Poly6 kernel: W(r,h) = (315/(64πh^9)) * (h² - r²)³
+    const double h2 = h * h;
+    const double h9 = h2 * h2 * h2 * h2 * h;
+    const double coefficient = 315.0 / (64.0 * M_PI * h9);
+    const double diff = h2 - r * r;
+
+    return coefficient * diff * diff * diff;
+}
+
+Eigen::Vector2d FluidBench::kernel_spiky_gradient(const Eigen::Vector2d& r_vec, double r, double h) const {
+    if (r <= 0.0 || r >= h) {
+        return Eigen::Vector2d(0.0, 0.0);
+    }
+
+    // Spiky gradient: ∇W(r,h) = -(45/(πh^6)) * (h-r)² * (r_vec/r)
+    const double h6 = h * h * h * h * h * h;
+    const double coefficient = -45.0 / (M_PI * h6);
+    const double h_minus_r = h - r;
+    const double scale = coefficient * h_minus_r * h_minus_r / r;
+
+    return scale * r_vec;
+}
+
+double FluidBench::kernel_viscosity_laplacian(double r, double h) const {
+    if (r < 0.0 || r >= h) {
+        return 0.0;
+    }
+
+    // Viscosity Laplacian: ∇²W(r,h) = (45/(πh^6)) * (h-r)
+    const double h6 = h * h * h * h * h * h;
+    const double coefficient = 45.0 / (M_PI * h6);
+
+    return coefficient * (h - r);
+}
+
+// SPH Force Computation
+void FluidBench::compute_density() {
+    // Compute density for each particle using SPH interpolation
+    for (size_t i = 0; i < _particles.size(); i++) {
+        auto& pi = _particles[i];
+        double density = 0.0;
+
+        // Find neighbors within smoothing radius
+        auto neighbors = _spatial_grid.query_neighbors(pi.position, _smoothing_radius);
+
+        for (size_t j : neighbors) {
+            const auto& pj = _particles[j];
+            Eigen::Vector2d r_vec = pj.position - pi.position;
+            double r = r_vec.norm();
+
+            // ρᵢ = Σⱼ mⱼ W(rᵢⱼ, h)
+            density += _particle_mass * kernel_poly6(r, _smoothing_radius);
+        }
+
+        // Clamp density to avoid instabilities
+        pi.density = std::max(density, _rest_density * 0.5);
+    }
+}
+
+void FluidBench::compute_pressure() {
+    // Compute pressure using equation of state: p = k(ρ - ρ₀)
+    for (auto& p : _particles) {
+        // Only apply pressure when density exceeds rest density (no negative pressure)
+        p.pressure = std::max(0.0, _gas_constant * (p.density - _rest_density));
+    }
+}
+
+void FluidBench::compute_pressure_forces() {
+    // Compute pressure forces for each particle
+    for (size_t i = 0; i < _particles.size(); i++) {
+        auto& pi = _particles[i];
+        Eigen::Vector2d pressure_force(0.0, 0.0);
+
+        // Find neighbors within smoothing radius
+        auto neighbors = _spatial_grid.query_neighbors(pi.position, _smoothing_radius);
+
+        for (size_t j : neighbors) {
+            if (i == j)
+                continue; // Skip self
+
+            const auto& pj = _particles[j];
+            Eigen::Vector2d r_vec = pj.position - pi.position;
+            double r = r_vec.norm();
+
+            if (r > 0.0 && r < _smoothing_radius) {
+                // Symmetric pressure force: fᵢ = -Σⱼ mⱼ (pᵢ + pⱼ)/(2ρⱼ) ∇W(rᵢⱼ, h)
+                double density_j = std::max(pj.density, _rest_density * 0.5); // Prevent division by very small density
+                double pressure_term = (pi.pressure + pj.pressure) / (2.0 * density_j);
+                Eigen::Vector2d gradient = kernel_spiky_gradient(r_vec, r, _smoothing_radius);
+                pressure_force -= _particle_mass * pressure_term * gradient;
+            }
+        }
+
+        pi.force += pressure_force;
+    }
+}
+
+void FluidBench::compute_viscosity_forces() {
+    // Compute viscosity forces for each particle
+    for (size_t i = 0; i < _particles.size(); i++) {
+        auto& pi = _particles[i];
+        Eigen::Vector2d viscosity_force(0.0, 0.0);
+
+        // Find neighbors within smoothing radius
+        auto neighbors = _spatial_grid.query_neighbors(pi.position, _smoothing_radius);
+
+        for (size_t j : neighbors) {
+            if (i == j)
+                continue; // Skip self
+
+            const auto& pj = _particles[j];
+            Eigen::Vector2d r_vec = pj.position - pi.position;
+            double r = r_vec.norm();
+
+            if (r > 0.0 && r < _smoothing_radius) {
+                // Viscosity force: fᵢ = μ Σⱼ mⱼ (vⱼ - vᵢ)/ρⱼ ∇²W(rᵢⱼ, h)
+                Eigen::Vector2d velocity_diff = pj.velocity - pi.velocity;
+                double laplacian = kernel_viscosity_laplacian(r, _smoothing_radius);
+                double density_j = std::max(pj.density, _rest_density * 0.5); // Prevent division by very small density
+                viscosity_force += _viscosity * _particle_mass * (velocity_diff / density_j) * laplacian;
+            }
+        }
+
+        pi.force += viscosity_force;
+    }
+}
+
 void FluidBench::simulate_step(double dt) {
     // Build spatial grid for neighbor queries
     build_spatial_grid();
 
-    // TODO: Compute SPH forces (density, pressure, viscosity)
-    // For now, just apply gravity
+    // Compute SPH quantities
+    compute_density();
+    compute_pressure();
 
     // Clear forces
     for (auto& p : _particles) {
@@ -89,6 +222,10 @@ void FluidBench::simulate_step(double dt) {
     for (auto& p : _particles) {
         p.force.y() += _gravity * _particle_mass;
     }
+
+    // Compute SPH forces
+    compute_pressure_forces();
+    compute_viscosity_forces();
 
     // Integrate forces to update velocities and positions
     for (auto& p : _particles) {
