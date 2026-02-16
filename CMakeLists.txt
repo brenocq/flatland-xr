@@ -156,12 +156,15 @@ add_library(
     ${SRC_DIR}/gui/plot.cpp
     ${SRC_DIR}/gui/ui_state.cpp
     ${SRC_DIR}/gui/window.cpp
+    ${SRC_DIR}/gui/benches/bench.cpp
+    ${SRC_DIR}/gui/benches/gravity/gravity_bench.cpp
+    ${SRC_DIR}/gui/benches/xr/xr_bench.cpp
     ${SRC_DIR}/gui/widgets/text.cpp
-    ${SRC_DIR}/gui/panels/config_panel.cpp
-    ${SRC_DIR}/gui/panels/error_metrics_panel.cpp
-    ${SRC_DIR}/gui/panels/measurements_panel.cpp
-    ${SRC_DIR}/gui/panels/perception_output_panel.cpp
-    ${SRC_DIR}/gui/panels/world_editor_panel.cpp
+    ${SRC_DIR}/gui/benches/xr/panels/config_panel.cpp
+    ${SRC_DIR}/gui/benches/xr/panels/error_metrics_panel.cpp
+    ${SRC_DIR}/gui/benches/xr/panels/measurements_panel.cpp
+    ${SRC_DIR}/gui/benches/xr/panels/perception_output_panel.cpp
+    ${SRC_DIR}/gui/benches/xr/panels/world_editor_panel.cpp
 )
 target_include_directories(flatland-gui PUBLIC ${SRC_DIR})
 target_link_libraries(flatland-gui PUBLIC flatland-simulation flatland-estimation implot)

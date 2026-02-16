@@ -195,4 +195,39 @@ void plot_pose_highlight(const Eigen::Vector3f& pose) {
     ImPlot::PlotScatter("##HoverHighlight", &x, &y, 1);
 }
 
+void plot_2d_arrow(const std::string& label, const Eigen::Vector2f& position, const Eigen::Vector2f& vector, const Color& color, float weight,
+                   float head_size) {
+    if (vector.norm() < 1e-6f)
+        return;
+
+    // Calculate arrow tip
+    Eigen::Vector2f tip = position + vector;
+
+    // Auto-size head based on vector length if not specified
+    float arrow_head_size = head_size;
+    if (arrow_head_size < 0.0f) {
+        arrow_head_size = vector.norm() * 0.2f;                             // 20% of vector length
+        arrow_head_size = std::max(0.05f, std::min(arrow_head_size, 0.5f)); // Clamp between 0.05 and 0.5
+    }
+
+    // Calculate normalized perpendicular and direction vectors
+    Eigen::Vector2f dir = vector.normalized();
+    Eigen::Vector2f perp(-dir.y(), dir.x());
+
+    // Arrow head points
+    Eigen::Vector2f head_base = tip - dir * arrow_head_size;
+    Eigen::Vector2f head_left = head_base + perp * arrow_head_size * 0.5f;
+    Eigen::Vector2f head_right = head_base - perp * arrow_head_size * 0.5f;
+
+    // Draw arrow shaft (from position to head base)
+    std::vector<Eigen::Vector2f> shaft = {position, head_base};
+    ImPlot::SetNextLineStyle(color, weight);
+    ImPlot::PlotLine(label.c_str(), &shaft[0].x(), &shaft[0].y(), static_cast<int>(shaft.size()), ImPlotLineFlags_None, 0, sizeof(Eigen::Vector2f));
+
+    // Draw arrow head (filled triangle)
+    std::vector<Eigen::Vector2f> head = {tip, head_left, head_right, tip};
+    ImPlot::SetNextLineStyle(color, weight);
+    ImPlot::PlotLine(label.c_str(), &head[0].x(), &head[0].y(), static_cast<int>(head.size()), ImPlotLineFlags_None, 0, sizeof(Eigen::Vector2f));
+}
+
 } // namespace gui

@@ -81,6 +81,17 @@ class Color : public Eigen::Vector4f {
         auto fade = [](const Color& c) { return Color::Lerp(c, Color::White(), 0.5f); };
         return {fade(CatRed()), fade(CatGreen()), fade(CatBlue()), fade(CatLavender())};
     }
+
+    // ImPlot colormap palette (matches the colormap in window.cpp)
+    static std::vector<Color> CatppuccinPalette() {
+        return {CatRed(), CatPeach(), CatYellow(), CatGreen(), CatTeal(), CatSky(), CatSapphire(), CatBlue(), CatLavender(), CatMauve(), CatPink()};
+    }
+
+    // Get color from Catppuccin palette by index (with wrapping)
+    static Color GetPaletteColor(size_t index) {
+        const auto palette = CatppuccinPalette();
+        return palette[index % palette.size()];
+    }
 };
 
 } // namespace gui
